@@ -10,27 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Run XGuardian Scanning
-        uses: xmart-xguardian/xguardian-actions@v24.11.3
-        env:
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          API_EMAIL: ${{ secrets.API_EMAIL }}
-          API_PASSWORD: ${{ secrets.API_PASSWORD }}
-          APP_NAME: ${{ github.repository }}
-          TEAM_ID: '1'
-          LANGUAGES: '["JavaScript"]'
-          DESCRIPTION: "Aplicação criada através do GitHub Actions - XGuardian"
-          POLICY_SAST: 0
-          POLICY_SCA: 0
-          POLICY_DAST: 0
-          POLICY_CONTAINER: 0
-          MICROSERVICES: false
-          MICROSERVICES_DATA: '[{"name": "MS1", "language": ["JavaScript"]}]'
-          SAST: "true"
-          SCA: "true"
-          TRANSLATE: "false"
-          EXCLUDE: ""
-          PDF: "false"
+      - name: XGuardian Scanning
+        uses: ./.github/actions/xguardian-actions # https://github.com/xmart-xguardian/xguardian-actions
+        with:
+          api_email: ${{ secrets.API_EMAIL }}
+          api_password: ${{ secrets.API_PASSWORD }}
+          api_token: ${{ secrets.API_TOKEN }}
+          gh_token: ${{ secrets.GH_TOKEN }}
+          app_name: ${{ github.repository }}
+          team_id: '[1]'
+          languages: '["JavaScript"]'
+          description: "Aplicação criada através do GitHub Actions - XGuardian"
+          policy_sast: '0'
+          policy_sca: '0'
+          policy_dast: '0'
+          policy_container: '0'
+          microservices: "false"
+          microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
+          sast: "true"
+          sca: "false"
+          translate: "false"
+          exclude: ""
+          pdf: "false"
