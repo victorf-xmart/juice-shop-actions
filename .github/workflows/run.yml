@@ -1,0 +1,37 @@
+name: XGuardian Scanning Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  xguardian-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      - name: Run XGuardian Scanning
+        uses: xmart-xguardian/xguardian-actions@v24.11.3
+        with:
+          APP_NAME: ${{ github.event.repository.name }}
+          TEAM_ID: '[1]'
+          LANGUAGES: '["JavaScript"]'
+          DESCRIPTION: "Aplicação criada através do GitHub Actions - XGuardian"
+          POLICY_SAST: 0
+          POLICY_SCA: 0
+          POLICY_DAST: 0
+          POLICY_CONTAINER: 0
+          MICROSERVICES: false
+          MICROSERVICES_DATA: '[{"name": "MS1", "language": ["JavaScript"]}]'
+          SAST: "true"
+          SCA: "true"
+          TRANSLATE: "false"
+          EXCLUDE: ""
+          PDF: "false"
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          API_EMAIL: ${{ secrets.API_EMAIL }}
+          API_PASSWORD: ${{ secrets.API_PASSWORD }}
