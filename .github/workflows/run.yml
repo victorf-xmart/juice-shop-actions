@@ -14,9 +14,13 @@ jobs:
 
       - name: Run XGuardian Scanning
         uses: xmart-xguardian/xguardian-actions@v24.11.3
-        with:
-          APP_NAME: ${{ github.event.repository.name }}
-          TEAM_ID: '[1]'
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          API_EMAIL: ${{ secrets.API_EMAIL }}
+          API_PASSWORD: ${{ secrets.API_PASSWORD }}
+          APP_NAME: ${{ github.repository }}
+          TEAM_ID: '1'
           LANGUAGES: '["JavaScript"]'
           DESCRIPTION: "Aplicação criada através do GitHub Actions - XGuardian"
           POLICY_SAST: 0
@@ -30,8 +34,3 @@ jobs:
           TRANSLATE: "false"
           EXCLUDE: ""
           PDF: "false"
-        env:
-          API_TOKEN: ${{ secrets.API_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          API_EMAIL: ${{ secrets.API_EMAIL }}
-          API_PASSWORD: ${{ secrets.API_PASSWORD }}
