@@ -277,16 +277,20 @@ runs:
       env:
         APP_NAME: ${{ inputs.app_name }}
       run: |
+        # Substituir caracteres especiais no nome do arquivo zip
+        SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
+
         # Zipar os arquivos excluindo os diretórios .git, node_modules e arquivos .env
-        zip -r "${APP_NAME}.zip" . -x "*.git*" "*node_modules*" "*.env*"
+        zip -r "${SAFE_APP_NAME}.zip" . -x "*.git*" "*node_modules*" "*.env*"
 
     - name: Upload da aplicação para o scan
       shell: bash
       env:
         APP_NAME: ${{ inputs.app_name }}
       run: |
-        # Pegando o caminho do arquivo zipado
-        filePath="./${APP_NAME}.zip"
+        # Usar o mesmo nome seguro do arquivo zip
+        SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
+        filePath="./${SAFE_APP_NAME}.zip"
 
         # A URL já deve vir pronta para uso do endpoint anterior
         echo "Debug: Upload URL: ${GET_UPLOAD_URL}"
