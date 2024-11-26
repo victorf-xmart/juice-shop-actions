@@ -231,7 +231,7 @@ runs:
         EXCLUDE: ${{ inputs.exclude }}
         PDF: ${{ inputs.pdf }}
         FILE_TYPE: "application/zip"
-        SCAN_VERSION: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
+        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
       run: |
         echo "Debug: SCAN_VERSION: ${SCAN_VERSION}"
 
