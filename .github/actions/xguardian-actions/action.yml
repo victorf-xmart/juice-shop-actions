@@ -367,32 +367,27 @@ runs:
       run: |
         echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
 
-        # Buscar scans de uma aplicação com paginação
-        GET_SCAN_PAGINATION_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
-
-        # Função para extrair o ID do scan mais recente com o SCAN_VERSION específico
-        get_scan_id() {
-          local response=$1
-          echo "$response" | jq --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version) | .id' | head -n 1
-        }
+        # URL da API com paginação
+        API_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
 
         # Tenta obter o scan ID por até 5 minutos (30 tentativas, 10 segundos cada)
         for i in {1..30}; do
           echo "Tentativa $i de 30..."
           
-          RESPONSE=$(curl -sS -X GET "${GET_SCAN_PAGINATION_URL}" \
+          RESPONSE=$(curl -sS -X GET "${API_URL}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
           
           # Verifica se a resposta é válida
-          if [ "$(echo "$RESPONSE" | jq -r 'type')" != "object" ]; then
+          if ! echo "$RESPONSE" | jq . >/dev/null 2>&1; then
             echo "Erro na resposta da API:"
             echo "$RESPONSE"
             sleep 10
             continue
-          }
+          fi
           
-          SCAN_ID=$(get_scan_id "$RESPONSE")
+          # Busca o ID do scan com o SCAN_VERSION específico
+          SCAN_ID=$(echo "$RESPONSE" | jq -r --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version) | .id')
           
           if [ -n "$SCAN_ID" ] && [ "$SCAN_ID" != "null" ]; then
             echo "Scan ID encontrado: $SCAN_ID"
@@ -408,6 +403,8 @@ runs:
             else
               echo "Scan ainda em andamento. Status: $SCAN_STATUS"
             fi
+          else
+            echo "Scan ID ainda não encontrado. Aguardando..."
           fi
           
           echo "Aguardando 10 segundos antes da próxima tentativa..."
