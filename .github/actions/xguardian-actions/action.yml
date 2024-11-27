@@ -71,6 +71,20 @@ inputs:
     description: "Permitir salvar vulnerabilidades no banco de dados?"
     default: "false"
 
+outputs:
+  app_id:
+    description: "ID da aplicação no XGuardian"
+    value: ${{ env.APP_ID }}
+  scan_id:
+    description: "ID do scan executado"
+    value: ${{ env.SCAN_ID }}
+  scan_url:
+    description: "URL para visualizar os resultados do scan"
+    value: "https://shield.xguardianplatform.io/aplicacoes/${{ env.APP_ID }}/scans"
+  scan_version:
+    description: "Versão do scan (baseada no nome do repositório e SHA do commit)"
+    value: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
+
 runs:
   using: "composite"
   steps:
