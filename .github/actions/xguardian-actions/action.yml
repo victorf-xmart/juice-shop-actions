@@ -274,11 +274,15 @@ runs:
         FILE_TYPE: "application/zip"
         SCAN_VERSION: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
       run: |
-        # Converte caracteres especiais para espaços, mantendo espaços existentes
-        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -c '[:alnum:] ' ' ')
-        echo "Debug: SCAN_VERSION: ${CLEAN_SCAN_VERSION}"
+        # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
+        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
+        echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
+        echo "Debug: SCAN_VERSION limpo: ${CLEAN_SCAN_VERSION}"
 
         UPLOAD_URL="https://uploader-mvp.xguardianplatform.io/upload-url"
+
+        # Limpa o APP_NAME também para garantir consistência
+        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
         DATA=$(cat << EOF
         {
