@@ -269,16 +269,18 @@ runs:
         EXCLUDE: ${{ inputs.exclude }}
         PDF: ${{ inputs.pdf }}
         FILE_TYPE: "application/zip"
-        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
+        SCAN_VERSION: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
       run: |
-        echo "Debug: SCAN_VERSION: ${SCAN_VERSION}"
+        # Clean up scan version to remove any remaining special characters
+        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -d '-' | tr -d '_' | tr -d '.')
+        echo "Debug: SCAN_VERSION: ${CLEAN_SCAN_VERSION}"
 
         UPLOAD_URL="https://uploader-mvp.xguardianplatform.io/upload-url"
 
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
-          "scan_version": "${SCAN_VERSION}",
+          "scan_version": "${CLEAN_SCAN_VERSION}",
           "file_type": "${FILE_TYPE}",
           "sca": "${SCA}",
           "sast": "${SAST}",
