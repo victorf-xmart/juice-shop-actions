@@ -71,10 +71,43 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Configurar Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: latest
+    - name: Validando inputs sensíveis
+      shell: bash
+      env:
+        API_EMAIL: ${{ inputs.api_email }}
+        API_PASSWORD: ${{ inputs.api_password }}
+        API_TOKEN: ${{ inputs.api_token }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+      run: |
+        echo "API_EMAIL: $API_EMAIL"
+        echo "API_PASSWORD: $API_PASSWORD"
+        echo "API_TOKEN: $API_TOKEN"
+        echo "GH_TOKEN: $GH_TOKEN"
+
+        # Validar formato de email
+        if [[ ! "$API_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+          echo "Error: Formato de email inválido"
+          exit 1
+        fi
+
+        # Validar comprimento mínimo da senha
+        PASSWORD_LENGTH=$(echo -n "$API_PASSWORD" | wc -c)
+        if [ $PASSWORD_LENGTH -lt 8 ]; then
+          echo "Error: Senha deve ter pelo menos 8 caracteres"
+          exit 1
+        fi
+
+        # Validar formato do GH Token (fine-grained)
+        if [[ ! "$GH_TOKEN" =~ ^github_pat_[A-Za-z0-9_]{0,255}$ ]]; then
+          echo "Error: O token deve ser um GitHub fine-grained PAT (começando com 'github_pat_')"
+          exit 1
+        fi
+
+        # Validar API Token
+        if [ -z "$API_TOKEN" ]; then
+          echo "Error: API token não pode estar vazio"
+          exit 1
+        fi
 
     - name: Instalar dependências
       shell: bash
