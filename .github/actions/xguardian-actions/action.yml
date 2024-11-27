@@ -358,8 +358,75 @@ runs:
         echo "Debug: Tamanho do arquivo zip:"
         du -h "${SAFE_APP_NAME}.zip"
 
+    - name: Obter ID do scan
+      shell: bash
+      env:
+        APP_ID: ${{ env.APP_ID }}
+        API_TOKEN: ${{ inputs.api_token }}
+        SCAN_VERSION: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
+      run: |
+        echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
+
+        # Buscar scans de uma aplicação com paginação
+        GET_SCAN_PAGINATION_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
+
+        # Função para extrair o ID do scan mais recente com o SCAN_VERSION específico
+        get_scan_id() {
+          local response=$1
+          echo "$response" | jq --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version) | .id' | head -n 1
+        }
+
+        # Tenta obter o scan ID por até 5 minutos (30 tentativas, 10 segundos cada)
+        for i in {1..30}; do
+          echo "Tentativa $i de 30..."
+          
+          RESPONSE=$(curl -sS -X GET "${GET_SCAN_PAGINATION_URL}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}")
+          
+          # Verifica se a resposta é válida
+          if [ "$(echo "$RESPONSE" | jq -r 'type')" != "object" ]; then
+            echo "Erro na resposta da API:"
+            echo "$RESPONSE"
+            sleep 10
+            continue
+          }
+          
+          SCAN_ID=$(get_scan_id "$RESPONSE")
+          
+          if [ -n "$SCAN_ID" ] && [ "$SCAN_ID" != "null" ]; then
+            echo "Scan ID encontrado: $SCAN_ID"
+            echo "SCAN_ID=$SCAN_ID" >> $GITHUB_ENV
+            
+            # Verifica o status do scan
+            SCAN_STATUS=$(echo "$RESPONSE" | jq -r --arg id "$SCAN_ID" '.data[] | select(.id == ($id|tonumber)) | .scan_status')
+            echo "Status do scan: $SCAN_STATUS"
+            
+            if [ "$SCAN_STATUS" = "FINISHED" ]; then
+              echo "Scan finalizado com sucesso!"
+              break
+            else
+              echo "Scan ainda em andamento. Status: $SCAN_STATUS"
+            fi
+          fi
+          
+          echo "Aguardando 10 segundos antes da próxima tentativa..."
+          sleep 10
+        done
+
+        if [ -z "$SCAN_ID" ] || [ "$SCAN_ID" = "null" ]; then
+          echo "::error title=XGuardian Scan::Não foi possível obter o ID do scan após 5 minutos."
+          exit 1
+        fi
+
     - name: Upload da aplicação para o scan
       shell: bash
+      env:
+        SAFE_APP_NAME: ${{ env.SAFE_APP_NAME }}
+        APP_NAME: ${{ inputs.app_name }}
+        APP_ID: ${{ env.APP_ID }}
+        SCAN_VERSION: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
+        SCAN_ID: ${{ env.SCAN_ID }} # TODO: Ainda fazer o step através da rota `get_scan_pagination`
       run: |
         # Usar o SAFE_APP_NAME do ambiente
         filePath="./${SAFE_APP_NAME}.zip"
@@ -387,6 +454,8 @@ runs:
           --data-binary "@${filePath}"; then
           echo "Upload realizado com sucesso!"
           echo "::notice title=XGuardian Scan::Upload concluído com sucesso! O scan será iniciado em breve."
+          echo "::notice title=XGuardian Scan::Aplicação: ${APP_NAME} - ID da Aplicação: ${APP_ID}"
+          echo "::notice title=XGuardian Scan::Nome/Versão do Scan: ${SCAN_VERSION} - ID do Scan: ${SCAN_ID}"
         else
           echo "Erro no upload."
           echo "::error title=XGuardian Scan::Falha no upload do arquivo para análise."
