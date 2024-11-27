@@ -22,6 +22,9 @@ inputs:
   app_name:
     description: "O nome da aplicação."
     required: true
+  scan_directory:
+    description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
+    default: "." # Root do projeto
   team_id:
     description: "O(s) ID(s) da(s) equipe(s)."
     default: "[1]"
@@ -276,12 +279,23 @@ runs:
       shell: bash
       env:
         APP_NAME: ${{ inputs.app_name }}
+        SCAN_DIR: ${{ inputs.scan_directory }}
       run: |
         # Substituir caracteres especiais no nome do arquivo zip
         SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
 
-        # Zipar os arquivos excluindo os diretórios .git, node_modules e arquivos .env
-        zip -r "${SAFE_APP_NAME}.zip" . -x "*.git*" "*node_modules*" "*.env*"
+        # Verifica se o diretório existe
+        if [ ! -d "$SCAN_DIR" ]; then
+          echo "Erro: Diretório $SCAN_DIR não encontrado"
+          exit 1
+        fi
+
+        # Entra no diretório especificado
+        cd "$SCAN_DIR"
+        # Zipa e salva um nível acima ("../")
+        zip -r "../${SAFE_APP_NAME}.zip" . -x "*.git*" "*node_modules*" "*.env*"
+        # Volta para o diretório original
+        cd ..
 
     - name: Upload da aplicação para o scan
       shell: bash
