@@ -1,4 +1,4 @@
-name: XGuardian Scanning Workflow
+name: Build and Security Scan
 
 on:
   push:
@@ -6,13 +6,32 @@ on:
       - main
 
 jobs:
-  xguardian-scan:
+  build-and-scan:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the code
+      # Exemplo de como checar o código-fonte do repositório
+      - name: Checar o código-fonte do repositório
         uses: actions/checkout@v4
 
-      - name: XGuardian Scanning
+      # Exemplo de como instalar e configurar o Node.js
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
+      #     cache: 'npm'
+      
+      # Exemplo de como instalar as dependências de uma aplicação Node.js
+      # - name: Install dependencies
+      #   run: npm ci
+
+      # Exemplo de como buildar uma aplicação Node.js
+      # - name: Build application
+      #   run: npm run build
+      # Assumindo que isso gera os arquivos em ./dist
+
+      # Exemplo de como executar o XGuardian Security Scan
+      - name: Executar scan de segurança
+        id: xguardian
         uses: ./.github/actions/xguardian-actions # https://github.com/xmart-xguardian/xguardian-actions
         with:
           api_email: ${{ secrets.API_EMAIL }}
@@ -20,6 +39,7 @@ jobs:
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
+          scan_directory: 'dist' # Analisando apenas o código buildado
           team_id: '[1]'
           languages: '["JavaScript"]'
           description: "Aplicação criada através do GitHub Actions - XGuardian"
@@ -32,6 +52,69 @@ jobs:
           sast: "true"
           sca: "true"
           translate: "false"
-          exclude: ""
+          exclude: '"*.vtt"' # Excluir arquivos de legendas de vídeo
           pdf: "false"
           save_vulns: "true"
+
+      # Exemplo de como checar os resultados do scan
+      - name: Checar resultados do scan
+        run: |
+          # Exemplo de como checar se o scan foi concluído
+          echo "Scan completed for build directory: dist"
+          echo "Scan ID: ${{ steps.xguardian.outputs.scan_id }}"
+          echo "Results available at: ${{ steps.xguardian.outputs.scan_url }}"
+
+      # Exemplo de como utilizar o Slack para notificar o resultado do scan
+      # - name: Notificar no Slack
+      #   uses: rtCamp/action-slack-notify@v2
+      #   env:
+      #     SLACK_WEBHOOK: secrets.SLACK_WEBHOOK
+      #     SLACK_MESSAGE: |
+      #       Build e Scan concluídos
+      #       Repositório: github.repository
+      #       Branch: github.ref_name
+      #       Resultados: steps.xguardian.outputs.scan_url
+
+      # - name: Notificar no Microsoft Teams
+      #   uses: aliencube/microsoft-teams-actions@v0.8.0
+      #   with:
+      #     webhook_uri: secrets.MS_TEAMS_WEBHOOK_URI
+      #     title: "Resultados do scan de segurança"
+      #     summary: "XGuardian Security Scan concluído"
+      #     sections: |
+      #       [{
+      #         "activityTitle": "Resultados do scan de segurança",
+      #         "activitySubtitle": "${{ github.repository  - ${{ github.ref_name ",
+      #         "facts": [
+      #           {
+      #             "name": "Status",
+      #             "value": "${{ job.status "
+      #           },
+      #           {
+      #             "name": "Scan ID",
+      #             "value": "${{ steps.xguardian.outputs.scan_id "
+      #           }
+      #         ],
+      #         "potentialAction": [
+      #           {
+      #             "@type": "OpenUri",
+      #             "name": "View Results",
+      #             "targets": [
+      #               {
+      #                 "os": "default",
+      #                 "uri": "${{ steps.xguardian.outputs.scan_url "
+      #               }
+      #             ]
+      #           }
+      #         ]
+      #       }]
+
+      # - name: Notificar no Zoom Chat
+      #   run: |
+      #     curl -X POST "https://zoom.us/v2/im/chat/messages" \
+      #     -H "Authorization: Bearer ${{ secrets.ZOOM_CHAT_TOKEN " \
+      #     -H "Content-Type: application/json" \
+      #     -d '{
+      #       "to_channel": "security-channel",
+      #       "message": "🔒 Security Scan completed\nRepository: ${{ github.repository \nResults: ${{ steps.xguardian.outputs.scan_url "
+      #     }'
