@@ -187,8 +187,8 @@ runs:
         MICROSERVICES_DATA: ${{ inputs.microservices_data }}
 
       run: |
-        # Limpa o nome da aplicação para remover todos os caracteres especiais (mantendo apenas alfanuméricos)
-        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]')
+        # Converte caracteres especiais para espaços, mantendo espaços existentes
+        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
 
         CREATE_APP_URL="https://uploader-mvp.xguardianplatform.io/create_app"
 
@@ -274,8 +274,8 @@ runs:
         FILE_TYPE: "application/zip"
         SCAN_VERSION: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
       run: |
-        # Limpa o nome do scan para remover todos os caracteres especiais (mantendo apenas alfanuméricos)
-        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]')
+        # Converte caracteres especiais para espaços, mantendo espaços existentes
+        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -c '[:alnum:] ' ' ')
         echo "Debug: SCAN_VERSION: ${CLEAN_SCAN_VERSION}"
 
         UPLOAD_URL="https://uploader-mvp.xguardianplatform.io/upload-url"
