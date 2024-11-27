@@ -194,7 +194,7 @@ runs:
 
         DATA=$(cat << EOF
         {
-          "app_name": "${CLEAN_APP_NAME}",
+          "app_name": "${APP_NAME}",
           "team_id": ${TEAM_ID},
           "languages": ${LANGUAGES},
           "description": "${DESCRIPTION}",
