@@ -318,12 +318,15 @@ runs:
       run: |
         # Substituir caracteres especiais no nome do arquivo zip
         SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
+        echo "SAFE_APP_NAME=${SAFE_APP_NAME}" >> $GITHUB_ENV
 
         # Verifica se o diretório existe
         if [ ! -d "$SCAN_DIR" ]; then
           echo "Erro: Diretório $SCAN_DIR não encontrado"
           exit 1
         fi
+
+        echo "Debug: Criando zip em ${SAFE_APP_NAME}.zip"
 
         # Entra no diretório especificado
         cd "$SCAN_DIR"
@@ -332,19 +335,43 @@ runs:
         # Volta para o diretório original
         cd ..
 
+        # Verificar se o arquivo zip foi criado
+        if [ ! -f "${SAFE_APP_NAME}.zip" ]; then
+          echo "Erro: Arquivo zip não foi criado com sucesso"
+          ls -la
+          exit 1
+        fi
+        echo "Debug: Arquivo zip criado em: $(pwd)/${SAFE_APP_NAME}.zip"
+
     - name: Upload da aplicação para o scan
       shell: bash
-      env:
-        APP_NAME: ${{ inputs.app_name }}
       run: |
-        # Usar o mesmo nome seguro do arquivo zip
-        SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
+        # Usar o SAFE_APP_NAME do ambiente
         filePath="./${SAFE_APP_NAME}.zip"
+
+        echo "Debug: Diretório atual: $(pwd)"
+        echo "Debug: Listando arquivos:"
+        ls -la
+
+        echo "Debug: Procurando arquivo em: ${filePath}"
+        if [ ! -f "${filePath}" ]; then
+          echo "Erro: Arquivo ${filePath} não encontrado"
+          exit 1
+        fi
+
+        echo "Debug: Tamanho do arquivo:"
+        du -h "${filePath}"
 
         # A URL já deve vir pronta para uso do endpoint anterior
         echo "Debug: Upload URL: ${GET_UPLOAD_URL}"
 
-        # Fazendo o upload do arquivo zipado para a URL de upload
-        curl --progress-bar --location --request PUT "${GET_UPLOAD_URL}" \
+        # Upload com progresso visível e verificação de status
+        echo "Iniciando upload..."
+        if curl --progress-bar --location --request PUT "${GET_UPLOAD_URL}" \
           --header 'Content-Type: application/zip' \
-          --data-binary "@${filePath}"
+          --data-binary "@${filePath}"; then
+          echo "Upload realizado com sucesso!"
+        else
+          echo "Erro no upload."
+          exit 1
+        fi
