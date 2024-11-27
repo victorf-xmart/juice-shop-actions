@@ -326,14 +326,14 @@ runs:
           exit 1
         fi
 
+        echo "Debug: Diretório atual antes do zip: $(pwd)"
+        echo "Debug: Conteúdo do diretório:"
+        ls -la
+
         echo "Debug: Criando zip em ${SAFE_APP_NAME}.zip"
 
-        # Entra no diretório especificado
-        cd "$SCAN_DIR"
-        # Zipa e salva um nível acima ("../")
-        zip -r "../${SAFE_APP_NAME}.zip" . -x "*.git*" "*node_modules*" "*.env*"
-        # Volta para o diretório original
-        cd ..
+        # Criar o zip no diretório atual
+        zip -r "${SAFE_APP_NAME}.zip" "${SCAN_DIR}" -x "*.git*" "*node_modules*" "*.env*"
 
         # Verificar se o arquivo zip foi criado
         if [ ! -f "${SAFE_APP_NAME}.zip" ]; then
@@ -341,7 +341,10 @@ runs:
           ls -la
           exit 1
         fi
+
         echo "Debug: Arquivo zip criado em: $(pwd)/${SAFE_APP_NAME}.zip"
+        echo "Debug: Tamanho do arquivo zip:"
+        du -h "${SAFE_APP_NAME}.zip"
 
     - name: Upload da aplicação para o scan
       shell: bash
