@@ -34,3 +34,4 @@ jobs:
           translate: "false"
           exclude: ""
           pdf: "false"
+          save_vulns: "false"
