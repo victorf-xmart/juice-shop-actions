@@ -2,12 +2,18 @@ name: Build and Security Scan
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      
     steps:
       # Exemplo de como checar o código-fonte do repositório
       - name: Checar o código-fonte do repositório
@@ -32,7 +38,7 @@ jobs:
       # Exemplo de como executar o XGuardian Security Scan
       - name: Executar scan de segurança
         id: xguardian
-        uses: ./.github/actions/xguardian-actions # https://github.com/xmart-xguardian/xguardian-actions
+        uses: ./.github/actions/xguardian-actions # xmart-xguardian/xguardian-actions@v24.11.3
         with:
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
@@ -57,13 +63,18 @@ jobs:
           save_vulns: "true"
 
       # Exemplo de como checar os resultados do scan
-      - name: Checar resultados do scan
+      - name: Verificar status do scan
+        # Executar mesmo se o passo anterior falhar
+        if: always() 
         run: |
-          # Exemplo de como checar se o scan foi concluído
-          echo "Scan completed for build directory: dist"
-          echo "Scan ID: ${{ steps.xguardian.outputs.scan_id }}"
-          echo "Results available at: ${{ steps.xguardian.outputs.scan_url }}"
-
+          if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
+            echo "✅ Scan completado com sucesso"
+            echo "📊 Resultados disponíveis em: ${{ steps.xguardian.outputs.scan_url }}"
+          else
+            echo "❌ Falha no scan de segurança"
+            exit 1
+          fi
+          
       # Exemplo de como utilizar o Slack para notificar o resultado do scan
       # - name: Notificar no Slack
       #   uses: rtCamp/action-slack-notify@v2
