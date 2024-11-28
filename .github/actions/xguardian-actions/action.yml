@@ -54,19 +54,27 @@ inputs:
     default: '[{"name": "MS1", "language": ["JavaScript"]}]'
   sast:
     description: "Vai ser feito o scan SAST?"
-    default: "true"
+    default: '"true"'
+    type: string
+    pattern: "^true|false$"
   sca:
     description: "Vai ser feito o scan SCA?"
-    default: "true"
+    default: '"true"'
+    type: string
+    pattern: "^true|false$"
   translate:
     description: "O relatório será traduzido para português do Brasil?"
-    default: "false"
+    default: '"false"'
+    type: string
+    pattern: "^true|false$"
   exclude:
     description: "Diretórios ou arquivos a serem excluídos do scan."
-    default: ""
+    default: '""'
   pdf:
     description: "O relatório será gerado em PDF detalhado?"
-    default: "false"
+    default: '"false"'
+    type: string
+    pattern: "^true|false$"
   save_vulns:
     description: "Permitir salvar vulnerabilidades no banco de dados?"
     default: "false"
