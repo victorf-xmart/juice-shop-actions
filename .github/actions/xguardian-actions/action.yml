@@ -3,7 +3,7 @@ description: "Executa análise de segurança automatizada (SAST/SCA) em reposit�
 author: "Xmart Solutions"
 
 branding:
-  icon: shield
+  icon: shield-check
   color: purple
 
 inputs:
