@@ -283,6 +283,7 @@ runs:
     - name: Obter URL de upload
       shell: bash
       env:
+        APP_ID: ${{ env.APP_ID }}
         SAST: ${{ inputs.sast }}
         SCA: ${{ inputs.sca }}
         TRANSLATE: ${{ inputs.translate }}
