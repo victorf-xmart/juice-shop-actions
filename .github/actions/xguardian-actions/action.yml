@@ -355,20 +355,32 @@ runs:
         SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
         echo "SAFE_APP_NAME=${SAFE_APP_NAME}" >> $GITHUB_ENV
 
+        echo "Debug: SCAN_DIR configurado como: ${SCAN_DIR}"
+        echo "Debug: Estrutura do diretório atual:"
+        pwd
+        tree -L 2 || ls -R  # tenta usar tree, se não disponível usa ls -R
+
         # Verifica se o diretório existe
         if [ ! -d "$SCAN_DIR" ]; then
-          echo "Erro: Diretório $SCAN_DIR não encontrado"
+          echo "Erro: Diretório '$SCAN_DIR' não encontrado no workspace"
+          echo "Por favor, verifique se o diretório existe ou use '.' para o diretório raiz"
           exit 1
         fi
 
         echo "Debug: Diretório atual antes do zip: $(pwd)"
-        echo "Debug: Conteúdo do diretório:"
-        ls -la
+        echo "Debug: Conteúdo do diretório $SCAN_DIR:"
+        ls -la "$SCAN_DIR"
 
         echo "Debug: Criando zip em ${SAFE_APP_NAME}.zip"
 
         # Criar o zip no diretório atual
-        zip -r "${SAFE_APP_NAME}.zip" "${SCAN_DIR}" -x "*.git*" "*node_modules*" "*.env*"
+        if [ "$SCAN_DIR" = "." ]; then
+          # Se for diretório raiz, exclui alguns diretórios comuns
+          zip -r "${SAFE_APP_NAME}.zip" . -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
+        else
+          # Se for um diretório específico
+          zip -r "${SAFE_APP_NAME}.zip" "$SCAN_DIR" -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
+        fi
 
         # Verificar se o arquivo zip foi criado
         if [ ! -f "${SAFE_APP_NAME}.zip" ]; then

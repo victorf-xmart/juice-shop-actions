@@ -45,7 +45,8 @@ jobs:
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
-          scan_directory: 'dist' # Analisando apenas o código buildado
+          scan_directory: '.' # Analisando todo o código-fonte por padrão
+          # scan_directory: 'dist' # Descomente e ajuste se quiser analisar apenas o código buildado
           team_id: '[1]'
           languages: '["JavaScript"]'
           description: "Aplicação criada através do GitHub Actions - XGuardian"
