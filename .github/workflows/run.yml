@@ -58,7 +58,7 @@ jobs:
           sast: "true"
           sca: "true"
           translate: "false"
-          exclude: '"*.vtt"' # Excluir arquivos de legendas de vídeo
+          exclude: ".vtt"
           pdf: "false"
           save_vulns: "true"
 
