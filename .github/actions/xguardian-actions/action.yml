@@ -91,7 +91,7 @@ outputs:
     value: ${{ steps.final_outputs.outputs.scan_url }}
   scan_version:
     description: "Versão do scan (baseada no nome do repositório e SHA do commit)"
-    value: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
+    value: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
 
 runs:
   using: "composite"
