@@ -461,6 +461,13 @@ runs:
           
           if [ -n "$SCAN_ID" ] && [ "$SCAN_ID" != "null" ]; then
             echo "SCAN_ID=$SCAN_ID" >> $GITHUB_ENV
+            echo "SCAN_URL=https://shield.xguardianplatform.io/aplicacoes/${APP_ID}/scans" >> $GITHUB_ENV
+            
+            {
+              echo "app_id=${APP_ID}"
+              echo "scan_id=${SCAN_ID}"
+              echo "scan_url=https://shield.xguardianplatform.io/aplicacoes/${APP_ID}/scans"
+            } >> $GITHUB_OUTPUT
             
             echo "::notice title=XGuardian Scan::Scan iniciado com sucesso!"
             echo "::notice title=XGuardian Scan::Aplicação: ${APP_NAME}"

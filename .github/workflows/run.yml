@@ -70,6 +70,8 @@ jobs:
         run: |
           if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
             echo "✅ Scan completado com sucesso"
+            echo "🆔 App ID: ${{ steps.xguardian.outputs.app_id }}"
+            echo "📝 Scan ID: ${{ steps.xguardian.outputs.scan_id }}"
             echo "📊 Resultados disponíveis em: ${{ steps.xguardian.outputs.scan_url }}"
           else
             echo "❌ Falha no scan de segurança"
