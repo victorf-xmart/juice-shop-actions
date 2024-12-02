@@ -80,12 +80,12 @@ jobs:
           if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
             # Verificar se as variáveis estão definidas
             if [ -n "$APP_ID" ] && [ -n "$SCAN_ID" ] && [ -n "$SCAN_URL" ]; then
-              echo "✅ Scan completado com sucesso"
+              echo "✅ Scan iniciado com sucesso!"
               echo "🆔 App ID: $APP_ID"
               echo "📝 Scan ID: $SCAN_ID"
-              echo "📊 Resultados disponíveis em: $SCAN_URL"
+              echo "📊 Resultados ficarão disponíveis em: $SCAN_URL"
             else
-              echo "⚠️ Scan completado, mas algumas informações estão faltando:"
+              echo "⚠️ Scan iniciado, mas algumas informações do output estão faltando:"
               echo "APP_ID: ${APP_ID:-'não definido'}"
               echo "SCAN_ID: ${SCAN_ID:-'não definido'}"
               echo "SCAN_URL: ${SCAN_URL:-'não definido'}"
