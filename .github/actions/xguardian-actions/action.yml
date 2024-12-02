@@ -82,13 +82,13 @@ inputs:
 outputs:
   app_id:
     description: "ID da aplicação no XGuardian"
-    value: ${{ env.APP_ID }}
+    value: ${{ steps.final_outputs.outputs.app_id }}
   scan_id:
     description: "ID do scan executado"
-    value: ${{ env.SCAN_ID }}
+    value: ${{ steps.final_outputs.outputs.scan_id }}
   scan_url:
     description: "URL para visualizar os resultados do scan"
-    value: "https://shield.xguardianplatform.io/aplicacoes/${{ env.APP_ID }}/scans"
+    value: ${{ steps.final_outputs.outputs.scan_url }}
   scan_version:
     description: "Versão do scan (baseada no nome do repositório e SHA do commit)"
     value: ${{ format('{0}{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
@@ -481,58 +481,47 @@ runs:
           fi
         done
 
-        # Verificar se o arquivo de estado existe e contém dados válidos
-        if [ ! -f "/tmp/xguardian_scan_complete" ] || [ ! -s "/tmp/xguardian_scan_complete" ]; then
-          echo "::error title=XGuardian Scan::Não foi possível obter o ID do scan após 5 minutos."
+        # Verifica se o SCAN_ID foi encontrado
+        if [ -z "$SCAN_ID" ] || [ "$SCAN_ID" == "null" ]; then
+          echo "::error title=XGuardian Scan::Não foi possível encontrar o ID do Scan após múltiplas tentativas."
           exit 1
         fi
 
-        # Validar o conteúdo do arquivo
-        IFS=':' read -r check_app_id check_scan_id < "/tmp/xguardian_scan_complete"
-        if [ -z "$check_app_id" ] || [ -z "$check_scan_id" ]; then
-          echo "::error title=XGuardian Scan::Arquivo de estado encontrado, mas com dados inválidos."
-          exit 1
-        fi
-
-    # Step específico para garantir os outputs
     - name: Finalizar e validar outputs
-      shell: bash
       id: final_outputs
+      shell: bash
       run: |
-        # Verifica e valida o arquivo de estado
         if [ ! -f "/tmp/xguardian_scan_complete" ] || [ ! -s "/tmp/xguardian_scan_complete" ]; then
           echo "::error title=XGuardian Scan::Arquivo de estado não encontrado ou vazio"
           exit 1
         fi
 
         # Lê os valores do arquivo de estado
-        IFS=':' read -r final_app_id final_scan_id < /tmp/xguardian_scan_complete
+        IFS=':' read -r app_id scan_id < /tmp/xguardian_scan_complete
 
         # Valida os valores
-        if [ -z "$final_app_id" ] || [ -z "$final_scan_id" ]; then
+        if [ -z "$app_id" ] || [ -z "$scan_id" ]; then
           echo "::error title=XGuardian Scan::Dados inválidos no arquivo de estado"
           exit 1
         fi
 
-        # Define os outputs usando o formato correto do GitHub Actions
-        {
-          echo "app_id=${final_app_id}"
-          echo "scan_id=${final_scan_id}"
-          echo "scan_url=https://shield.xguardianplatform.io/aplicacoes/${final_app_id}/scans"
-        } >> "$GITHUB_OUTPUT"
+        # Define os outputs corretamente
+        echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
+        echo "scan_id=$scan_id" >> "$GITHUB_OUTPUT"
+        echo "scan_url=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans" >> "$GITHUB_OUTPUT"
 
-        # Define também no ambiente para garantir
+        # Define também no ambiente para compatibilidade
         {
-          echo "APP_ID=${final_app_id}"
-          echo "SCAN_ID=${final_scan_id}"
-          echo "SCAN_URL=https://shield.xguardianplatform.io/aplicacoes/${final_app_id}/scans"
+          echo "APP_ID=$app_id"
+          echo "SCAN_ID=$scan_id"
+          echo "SCAN_URL=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
         } >> "$GITHUB_ENV"
 
         # Log para debug
         echo "Debug: Outputs definidos"
-        echo "APP_ID: ${final_app_id}"
-        echo "SCAN_ID: ${final_scan_id}"
-        echo "SCAN_URL: https://shield.xguardianplatform.io/aplicacoes/${final_app_id}/scans"
+        echo "app_id: $app_id"
+        echo "scan_id: $scan_id"
+        echo "scan_url: https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
 
     - name: Salvar vulnerabilidades no banco de dados
       if: ${{ inputs.save_vulns == 'true' }}
