@@ -111,7 +111,7 @@ runs:
 
         # Validar formato de email
         if [[ ! "$API_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-          echo "Error: Formato de email inválido"
+          echo "::error::Formato de email inválido"
           exit 1
         fi
 
@@ -171,7 +171,7 @@ runs:
             -w "%{http_code}")
           
           if [[ "$TEST_RESPONSE" == *"200"* ]]; then
-            echo "Token existente ainda é válido."
+            echo "::debug::Token existente ainda é válido."
             echo "API_TOKEN=$API_TOKEN" >> $GITHUB_ENV
             NEED_NEW_TOKEN=false
           fi
