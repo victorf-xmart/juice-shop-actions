@@ -63,16 +63,35 @@ jobs:
           pdf: "false"
           save_vulns: "true"
 
+      - name: Debug outputs
+        run: |
+          echo "xguardian.outputs.app_id: ${{ steps.xguardian.outputs.app_id }}"
+          echo "xguardian.outputs.scan_id: ${{ steps.xguardian.outputs.scan_id }}"
+          echo "xguardian.outputs.scan_url: ${{ steps.xguardian.outputs.scan_url }}"    
+
       # Exemplo de como checar os resultados do scan
       - name: Verificar status do scan
         # Executar mesmo se o passo anterior falhar
         if: always() 
+        env:
+          APP_ID: ${{ steps.xguardian.outputs.app_id }}
+          SCAN_ID: ${{ steps.xguardian.outputs.scan_id }}
+          SCAN_URL: ${{ steps.xguardian.outputs.scan_url }}
         run: |
           if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
-            echo "✅ Scan completado com sucesso"
-            echo "🆔 App ID: ${{ steps.xguardian.outputs.app_id }}"
-            echo "📝 Scan ID: ${{ steps.xguardian.outputs.scan_id }}"
-            echo "📊 Resultados disponíveis em: ${{ steps.xguardian.outputs.scan_url }}"
+            # Verificar se as variáveis estão definidas
+            if [ -n "$APP_ID" ] && [ -n "$SCAN_ID" ] && [ -n "$SCAN_URL" ]; then
+              echo "✅ Scan completado com sucesso"
+              echo "🆔 App ID: $APP_ID"
+              echo "📝 Scan ID: $SCAN_ID"
+              echo "📊 Resultados disponíveis em: $SCAN_URL"
+            else
+              echo "⚠️ Scan completado, mas algumas informações estão faltando:"
+              echo "APP_ID: ${APP_ID:-'não definido'}"
+              echo "SCAN_ID: ${SCAN_ID:-'não definido'}"
+              echo "SCAN_URL: ${SCAN_URL:-'não definido'}"
+              exit 1
+            fi
           else
             echo "❌ Falha no scan de segurança"
             exit 1
