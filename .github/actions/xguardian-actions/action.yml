@@ -59,7 +59,7 @@ inputs:
     pattern: "^true|false$"
   sca:
     description: "Vai ser feito o scan SCA?"
-    default: '"true"'
+    default: '"false"'
     type: string
     pattern: "^true|false$"
   translate:
