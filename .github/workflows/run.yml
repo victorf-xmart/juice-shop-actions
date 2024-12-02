@@ -57,7 +57,7 @@ jobs:
           microservices: "false"
           microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
           sast: "true"
-          sca: "true"
+          sca: "false"
           translate: "false"
           exclude: ".vtt"
           pdf: "false"
