@@ -38,7 +38,7 @@ jobs:
       # Exemplo de como executar o XGuardian Security Scan
       - name: Executar scan de segurança
         id: xguardian
-        uses: ./.github/actions/xguardian-actions # xmart-xguardian/xguardian-actions@v24.11.3
+        uses: xmart-xguardian/xguardian-actions@v24.12.0
         with:
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
