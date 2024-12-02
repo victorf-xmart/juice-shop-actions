@@ -67,12 +67,11 @@ jobs:
         run: |
           echo "xguardian.outputs.app_id: ${{ steps.xguardian.outputs.app_id }}"
           echo "xguardian.outputs.scan_id: ${{ steps.xguardian.outputs.scan_id }}"
-          echo "xguardian.outputs.scan_url: ${{ steps.xguardian.outputs.scan_url }}"    
-
+          echo "xguardian.outputs.scan_url: ${{ steps.xguardian.outputs.scan_url }}"
+    
       # Exemplo de como checar os resultados do scan
       - name: Verificar status do scan
-        # Executar mesmo se o passo anterior falhar
-        if: always() 
+        if: always()
         env:
           APP_ID: ${{ steps.xguardian.outputs.app_id }}
           SCAN_ID: ${{ steps.xguardian.outputs.scan_id }}
