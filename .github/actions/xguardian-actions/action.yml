@@ -459,14 +459,26 @@ runs:
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
           
-          # Debug da resposta
-          echo "Debug: Resposta da API:"
-          echo "$RESPONSE" | jq '.' || echo "Resposta não é JSON válido: $RESPONSE"
+          # Verifica se a resposta é um JSON válido
+          if ! echo "$RESPONSE" | jq . >/dev/null 2>&1; then
+            echo "Debug: Resposta não é um JSON válido:"
+            echo "$RESPONSE"
+            if [ $i -lt 30 ]; then
+              echo "Aguardando próxima tentativa..."
+              sleep 10
+              continue
+            fi
+            exit 1
+          fi
+
+          # Debug da resposta (limitado aos campos relevantes)
+          echo "Debug: Scans encontrados:"
+          echo "$RESPONSE" | jq -r '.data[] | {scanuuid, id, scan_status, created_at}'
           
           # Verifica se a resposta tem a estrutura esperada e contém dados
           if [ "$(echo "$RESPONSE" | jq -r 'has("data")')" = "true" ] && [ "$(echo "$RESPONSE" | jq -r '.data | length')" -gt 0 ]; then
-            # Busca o scan mais recente com o SCAN_VERSION específico
-            SCAN_DATA=$(echo "$RESPONSE" | jq -r --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version) | {id, scan_status, created_at}' | head -1)
+            # Busca o scan com o SCAN_VERSION específico
+            SCAN_DATA=$(echo "$RESPONSE" | jq -r --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version)')
             
             if [ -n "$SCAN_DATA" ] && [ "$SCAN_DATA" != "null" ]; then
               SCAN_ID=$(echo "$SCAN_DATA" | jq -r '.id')
@@ -493,11 +505,20 @@ runs:
             else
               echo "Debug: SCAN_ID não encontrado nesta tentativa"
               echo "Debug: Procurando por versão: $SCAN_VERSION"
-              echo "Debug: Scans disponíveis:"
-              echo "$RESPONSE" | jq -r '.data[] | {scanuuid, id, scan_status, created_at}'
             fi
           else
             echo "Debug: Resposta não contém dados válidos"
+          fi
+          
+          # Verifica se há mais páginas e se precisamos consultá-las
+          TOTAL_PAGES=$(echo "$RESPONSE" | jq -r '.total_pages')
+          CURRENT_PAGE=$(echo "$RESPONSE" | jq -r '.page')
+          
+          if [ "$TOTAL_PAGES" -gt "$CURRENT_PAGE" ]; then
+            NEXT_PAGE=$((CURRENT_PAGE + 1))
+            API_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=${NEXT_PAGE}&items_per_page=10"
+            echo "Debug: Consultando próxima página: $NEXT_PAGE de $TOTAL_PAGES"
+            continue
           fi
           
           if [ $i -lt 30 ]; then
@@ -509,6 +530,7 @@ runs:
         # Verifica se o SCAN_ID foi encontrado
         if [ -z "$SCAN_ID" ] || [ "$SCAN_ID" == "null" ]; then
           echo "::error title=XGuardian Scan::Não foi possível encontrar o ID do Scan após múltiplas tentativas."
+          echo "::error title=XGuardian Scan::Versão procurada: ${SCAN_VERSION}"
           echo "::error title=XGuardian Scan::Última resposta da API:"
           echo "$RESPONSE" | jq '.' || echo "$RESPONSE"
           exit 1
