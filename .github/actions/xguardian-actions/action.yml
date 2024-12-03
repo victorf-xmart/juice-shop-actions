@@ -446,7 +446,7 @@ runs:
         echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
         echo "Debug: APP_ID: ${APP_ID}"
 
-        # URL da API com paginação
+        # URL da API (apenas primeira página)
         API_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
         echo "Debug: URL da API: ${API_URL}"
 
@@ -508,17 +508,6 @@ runs:
             fi
           else
             echo "Debug: Resposta não contém dados válidos"
-          fi
-          
-          # Verifica se há mais páginas e se precisamos consultá-las
-          TOTAL_PAGES=$(echo "$RESPONSE" | jq -r '.total_pages')
-          CURRENT_PAGE=$(echo "$RESPONSE" | jq -r '.page')
-          
-          if [ "$TOTAL_PAGES" -gt "$CURRENT_PAGE" ]; then
-            NEXT_PAGE=$((CURRENT_PAGE + 1))
-            API_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=${NEXT_PAGE}&items_per_page=10"
-            echo "Debug: Consultando próxima página: $NEXT_PAGE de $TOTAL_PAGES"
-            continue
           fi
           
           if [ $i -lt 30 ]; then
