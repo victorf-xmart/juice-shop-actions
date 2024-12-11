@@ -42,7 +42,7 @@ jobs:
         with:
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
-          api_token: ""
+          api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
           scan_directory: '.' # Analisando todo o código-fonte por padrão
