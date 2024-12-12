@@ -61,7 +61,6 @@ jobs:
           translate: "false"
           exclude: ".vtt"
           pdf: "false"
-          save_vulns: "true"
 
       - name: Debug outputs
         run: |
