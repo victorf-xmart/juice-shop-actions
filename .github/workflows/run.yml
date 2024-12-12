@@ -59,7 +59,7 @@ jobs:
           sast: "true"
           sca: "false"
           translate: "false"
-          exclude: ".vtt"
+          exclude: ""
           pdf: "false"
 
       - name: Debug outputs
