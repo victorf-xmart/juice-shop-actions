@@ -341,18 +341,20 @@ runs:
 
         # Extrair o corpo e o código de status
         echo "GET_UPLOAD_URL_RESPONSE: $GET_UPLOAD_URL_RESPONSE"
-        GET_UPLOAD_URL=$(echo "$GET_UPLOAD_URL_RESPONSE" | jq -r '.url')
+        RESPONSE_BODY=$(echo "$GET_UPLOAD_URL_RESPONSE" | head -n1)
         HTTP_STATUS=$(echo "$GET_UPLOAD_URL_RESPONSE" | tail -n1)
+
+        GET_UPLOAD_URL=$(echo "$RESPONSE_BODY" | jq -r '.url')
 
         if [ "$HTTP_STATUS" -ne 200 ]; then
           echo "Erro: Falha ao obter a URL de upload. Código de status HTTP: $HTTP_STATUS"
-          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$GET_UPLOAD_URL_RESPONSE'"
+          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$RESPONSE_BODY'"
           exit 1
         fi
 
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
           echo "Erro: Não foi possível obter a URL de upload. Verifique se as credenciais e os parâmetros estão corretos."
-          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$GET_UPLOAD_URL_RESPONSE'"
+          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$RESPONSE_BODY'"
           exit 1
         fi
 
