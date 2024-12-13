@@ -333,15 +333,25 @@ runs:
         # Debug do payload original
         echo "Debug: DATA (raw): ${DATA}"
 
-        GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
+        GET_UPLOAD_URL_RESPONSE=$(curl -sS -w "%{http_code}" -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}" \
-            -d "${DATA}" | jq -r '.url')
+            -d "${DATA}")
+
+        # Extrair o corpo e o código de status
+        GET_UPLOAD_URL=$(echo "$GET_UPLOAD_URL_RESPONSE" | jq -r '.url')
+        HTTP_STATUS=$(echo "$GET_UPLOAD_URL_RESPONSE" | tail -n1)
+
+        if [ "$HTTP_STATUS" -ne 200 ]; then
+          echo "Erro: Falha ao obter a URL de upload. Código de status HTTP: $HTTP_STATUS"
+          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$GET_UPLOAD_URL_RESPONSE'"
+          exit 1
+        fi
 
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
           echo "Erro: Não foi possível obter a URL de upload. Verifique se as credenciais e os parâmetros estão corretos."
-          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$GET_UPLOAD_URL'"
+          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$GET_UPLOAD_URL_RESPONSE'"
           exit 1
         fi
 
