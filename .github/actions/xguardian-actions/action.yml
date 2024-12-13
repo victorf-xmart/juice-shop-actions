@@ -311,10 +311,11 @@ runs:
         # Limpa o APP_NAME também para garantir consistência
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
+        # zoando o SCAN_VERSION para testar o erro/exception
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
-          "scan_version": "${CLEAN_SCAN_VERSION}",
+          "scan_version": "disaidjsaidwuqdjsa",
           "file_type": "${FILE_TYPE}",
           "sca": "${SCA}",
           "sast": "${SAST}",
@@ -339,7 +340,8 @@ runs:
             -d "${DATA}" | jq -r '.url')
 
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
-          echo "Erro: Não foi possível obter a URL de upload"
+          echo "Erro: Não foi possível obter a URL de upload. Verifique se as credenciais e os parâmetros estão corretos."
+          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$GET_UPLOAD_URL'"
           exit 1
         fi
 
@@ -444,6 +446,7 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
+        sleep 15s
         echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
         echo "Debug: APP_ID: ${APP_ID}"
 
