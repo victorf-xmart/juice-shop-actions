@@ -340,8 +340,7 @@ runs:
             -d "${DATA}" | jq -r '.url')
 
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
-          echo "Erro: Não foi possível obter a URL de upload. Verifique se as credenciais e os parâmetros estão corretos."
-          echo "Retorno da API (https://uploader-mvp.xguardianplatform.io/upload-url): '$GET_UPLOAD_URL_RESPONSE'"
+          echo "Erro: Não foi possível obter a URL de upload"
           exit 1
         fi
 
