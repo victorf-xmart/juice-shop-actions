@@ -311,7 +311,7 @@ runs:
         # Limpa o APP_NAME também para garantir consistência
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
-        # PDF false por padrão por conta do regenerate (ainda não em prod)
+        # PDF false TEMPORARIAMENTE por conta do regenerate (ainda não em prod)
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
