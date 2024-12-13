@@ -340,6 +340,7 @@ runs:
             -d "${DATA}")
 
         # Extrair o corpo e o código de status
+        echo "GET_UPLOAD_URL_RESPONSE: $GET_UPLOAD_URL_RESPONSE"
         GET_UPLOAD_URL=$(echo "$GET_UPLOAD_URL_RESPONSE" | jq -r '.url')
         HTTP_STATUS=$(echo "$GET_UPLOAD_URL_RESPONSE" | tail -n1)
 
