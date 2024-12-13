@@ -311,17 +311,17 @@ runs:
         # Limpa o APP_NAME também para garantir consistência
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
-        # zoando o SCAN_VERSION para testar o erro/exception
+        # PDF false por padrão por conta do regenerate (ainda não em prod)
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
-          "scan_version": "disaidjsaidwuqdjsa",
+          "scan_version": "${CLEAN_SCAN_VERSION}",
           "file_type": "${FILE_TYPE}",
           "sca": "${SCA}",
           "sast": "${SAST}",
           "translate": "${TRANSLATE}",
           "exclude": "${EXCLUDE}",
-          "pdf": "${PDF}"
+          "pdf": "false"
         }
         EOF
         )
