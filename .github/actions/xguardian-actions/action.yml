@@ -3,8 +3,9 @@ description: "Realiza o upload de repositórios GitHub e executa análise de seg
 author: "Xmart Solutions"
 
 branding:
-  icon: shield-check # XGuardian.png
+  icon: "XGuardian.png"
   color: purple # Cor roxo900 [#2C1161] - XGuardian
+  label: Security Scanning
 version: v24.12.1
 
 inputs:
@@ -311,7 +312,6 @@ runs:
         # Limpa o APP_NAME também para garantir consistência
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
-        # PDF false TEMPORARIAMENTE por conta do regenerate (ainda não em prod)
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
@@ -321,7 +321,7 @@ runs:
           "sast": "${SAST}",
           "translate": "${TRANSLATE}",
           "exclude": "${EXCLUDE}",
-          "pdf": "false"
+          "pdf": "${PDF}"
         }
         EOF
         )
@@ -445,7 +445,12 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
-        sleep 15s
+        echo "Aguardando 30 segundos"
+        for i in {1..3}; do
+          sleep 10
+          echo "$i tentativa"
+        done
+
         echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
         echo "Debug: APP_ID: ${APP_ID}"
 
