@@ -9,6 +9,7 @@ branding:
 version: v24.12.1
 
 inputs:
+  # Secrets obrigatórios
   api_email:
     description: "O e-mail para login/autenticação na API."
     required: true
@@ -21,42 +22,40 @@ inputs:
   gh_token:
     description: "Token de acesso ao Github necessário para utilizar o comando gh CLI."
     required: true
+
+  # Nome da aplicação (default: nome do repositório)
   app_name:
     description: "O nome da aplicação."
     required: true
-  site_url:
-    description: "O URL do site a ser escaneado."
-    required: true
-  # scan_directory:
-  #   description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
-  #   default: "." # Root do projeto
-  # team_id:
-  #   description: "O(s) ID(s) da(s) equipe(s)."
-  #   default: "[1]"
-  # languages:
-  #   description: "A(s) linguagem(ns) da aplicação."
-  #   default: '["JavaScript"]'
-  # description:
-  #   description: "A descrição da aplicação."
-  #   default: "Aplicação criada através do GitHub Actions - XGuardian"
-  # policy_sast:
-  #   description: "O ID da política de SAST."
-  #   default: "0"
-  # policy_sca:
-  #   description: "O ID da política de SCA."
-  #   default: "0"
-  # policy_dast:
-  #   description: "O ID da política de DAST."
-  #   default: "0"
-  # policy_container:
-  #   description: "O ID da política de Container."
-  #   default: "0"
-  # microservices:
-  #   description: "A aplicação possui microserviços?"
-  #   default: "false"
-  # microservices_data:
-  #   description: "O(s) dados do(s) microserviço(s): Nome(s) e linguagem(ns)."
-  #   default: '[{"name": "MS1", "language": ["JavaScript"]}]'
+
+  # Criação/verificação da aplicação
+  team_id:
+    description: "O(s) ID(s) da(s) equipe(s)."
+    default: "[1]"
+  languages:
+    description: "A(s) linguagem(ns) da aplicação."
+    default: '["JavaScript"]'
+  description:
+    description: "A descrição da aplicação."
+    default: "Aplicação criada através do GitHub Actions - XGuardian"
+  policy_sast:
+    description: "O ID da política de SAST."
+    default: "0"
+  policy_sca:
+    description: "O ID da política de SCA."
+    default: "0"
+  policy_dast:
+    description: "O ID da política de DAST."
+    default: "0"
+  policy_container:
+    description: "O ID da política de Container."
+    default: "0"
+  microservices:
+    description: "A aplicação possui microserviços?"
+    default: "false"
+  microservices_data:
+    description: "O(s) dados do(s) microserviço(s): Nome(s) e linguagem(ns)."
+    default: '[{"name": "MS1", "language": ["JavaScript"]}]'
   # sast:
   #   description: "Vai ser feito o scan SAST?"
   #   default: '"true"'
@@ -83,6 +82,11 @@ inputs:
   save_vulns:
     description: "Permitir salvar vulnerabilidades no banco de dados?"
     default: "false"
+
+  # Uso para o scan DAST
+  site_url:
+    description: "O URL do site a ser escaneado."
+    required: false
 
 outputs:
   app_id:
@@ -333,24 +337,6 @@ runs:
 
         echo "Resposta do upload DAST:"
         echo "$RESPONSE"
-
-    #         curl -X 'POST' \
-    #   'https://uploader-mvp.xguardianplatform.io/upload-dast' \
-    #   -H 'accept: application/json' \
-    #   -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE5ZTYyMDM0LWQzMmUtNDY3OS1iZTAwLTFkOTI2NmFjNmY0YSIsInNjYW5zQXZhaWxhYmxlIjowLCJpc0ludGVybiI6InRydWUiLCJ4bWFydC1hZG1pbiI6IlNIJVNzVlg0RXlCZVJuMnRONWZTVzd2dE1oJEN2TjNuYzZYaXB0Z1ZqOWpNOFhvZHBwZHFOXkBXVmI2OGdNc2MiLCJyb2xlcyI6eyJjcmVhdGVfYXBwIjp0cnVlLCJjcmVhdGVfc2NhbiI6dHJ1ZX0sIndlYmhvb2siOiJmYWxzZSIsImV4cCI6MTczNDYzOTQ4NX0.7u5XGUI1dASKxPF3IsHtAVFYI2LT2_x_JHdqV32t0suPWuBKj0aLeY4XCDYyftUVgMWG6RI4A9lGSCxq0OcTXA' \
-    #   -H 'Content-Type: application/json' \
-    #   -d '{
-    #     "app_id": "128",
-    #     "scan_version_dast": "itsecgames",
-    #     "site_url": "http://www.itsecgames.com/index.htm",
-    #     "auth_url": "",
-    #     "logout_url": "",
-    #     "authexist": false,
-    #     "userlogin": "",
-    #     "passwordlogin": "",
-    #     "translate": "false",
-    #     "pdf": "false"
-    # }'
 
     - name: Obter ID do scan
       shell: bash
