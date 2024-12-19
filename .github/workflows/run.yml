@@ -37,81 +37,64 @@ jobs:
       # Assumindo que isso gera os arquivos em ./dist
 
       # Exemplo de como executar o XGuardian Security Scan
-      # - name: Executar scan de segurança
-      #   id: xguardian
-      #   uses: ./.github/actions/xguardian-actions # xmart-xguardian/xguardian-actions@main
-      #   with:
-      #     api_email: ${{ secrets.API_EMAIL }}
-      #     api_password: ${{ secrets.API_PASSWORD }}
-      #     api_token: ${{ secrets.API_TOKEN }}
-      #     gh_token: ${{ secrets.GH_TOKEN }}
-      #     app_name: ${{ github.event.repository.name }}
-      #     scan_directory: '.' # Analisando todo o código-fonte por padrão
-      #     # scan_directory: 'dist' # Descomente e ajuste se quiser analisar apenas o código buildado
-      #     team_id: '[1]'
-      #     languages: '["JavaScript"]'
-      #     description: "Aplicação criada através do GitHub Actions - XGuardian"
-      #     policy_sast: '0'
-      #     policy_sca: '0'
-      #     policy_dast: '0'
-      #     policy_container: '0'
-      #     microservices: "false"
-      #     microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
-      #     sast: "true"
-      #     sca: "false"
-      #     translate: "false"
-      #     exclude: ""
-      #     pdf: "false"
-
-      # - name: Debug outputs
-      #   run: |
-      #     echo "app_id: ${{ steps.xguardian.outputs.app_id }}"
-      #     echo "scan_id: ${{ steps.xguardian.outputs.scan_id }}"
-      #     echo "scan_url: ${{ steps.xguardian.outputs.scan_url }}"
-
-      # Nova etapa para executar o XGuardian Security Scan para DAST
-      - name: Executar scan de segurança DAST
-        id: xguardian-dast
-        uses: ./.github/actions/xguardian-dast-actions # xmart-xguardian/xguardian-dast-actions@main
+      - name: Executar scan de segurança
+        id: xguardian
+        uses: xmart-xguardian/xguardian-actions@main # ./.github/actions/xguardian-actions 
         with:
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
+          scan_directory: '.' # Analisando todo o código-fonte por padrão
+          # scan_directory: 'dist' # Descomente e ajuste se quiser analisar apenas o código buildado
+          team_id: '[1]'
+          languages: '["JavaScript"]'
+          description: "Aplicação criada através do GitHub Actions - XGuardian"
+          policy_sast: '0'
+          policy_sca: '0'
+          policy_dast: '0'
+          policy_container: '0'
+          microservices: "false"
+          microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
+          sast: "true"
+          sca: "false"
+          translate: "false"
+          exclude: ""
+          pdf: "false"
 
-      # - name: Debug outputs DAST
-      #   run: |
-      #     echo "app_id: ${{ steps.xguardian-dast.outputs.app_id }}"
-      #     echo "scan_id: ${{ steps.xguardian-dast.outputs.scan_id }}"
-      #     echo "scan_url: ${{ steps.xguardian-dast.outputs.scan_url }}"
+      - name: Debug outputs
+        run: |
+          echo "app_id: ${{ steps.xguardian.outputs.app_id }}"
+          echo "scan_id: ${{ steps.xguardian.outputs.scan_id }}"
+          echo "scan_url: ${{ steps.xguardian.outputs.scan_url }}"
 
       # Exemplo de como checar os resultados do scan
-      # - name: Verificar status do scan
-      #   if: always()
-      #   env:
-      #     APP_ID: ${{ steps.xguardian.outputs.app_id }}
-      #     SCAN_ID: ${{ steps.xguardian.outputs.scan_id }}
-      #     SCAN_URL: ${{ steps.xguardian.outputs.scan_url }}
-      #   run: |
-      #     if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
-      #       # Verificar se as variáveis estão definidas
-      #       if [ -n "$APP_ID" ] && [ -n "$SCAN_ID" ] && [ -n "$SCAN_URL" ]; then
-      #         echo "✅ Scan iniciado com sucesso!"
-      #         echo "🆔 App ID: $APP_ID"
-      #         echo "📝 Scan ID: $SCAN_ID"
-      #         echo "📊 Resultados ficarão disponíveis em: $SCAN_URL"
-      #       else
-      #         echo "⚠️ Scan iniciado, mas algumas informações do output estão faltando:"
-      #         echo "APP_ID: ${APP_ID:-'não definido'}"
-      #         echo "SCAN_ID: ${SCAN_ID:-'não definido'}"
-      #         echo "SCAN_URL: ${SCAN_URL:-'não definido'}"
-      #         exit 1
-      #       fi
-      #     else
-      #       echo "❌ Falha no scan de segurança"
-      #       exit 1
-      #     fi
+      - name: Verificar status do scan
+        if: always()
+        env:
+          APP_ID: ${{ steps.xguardian.outputs.app_id }}
+          SCAN_ID: ${{ steps.xguardian.outputs.scan_id }}
+          SCAN_URL: ${{ steps.xguardian.outputs.scan_url }}
+        run: |
+          if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
+            # Verificar se as variáveis estão definidas
+            if [ -n "$APP_ID" ] && [ -n "$SCAN_ID" ] && [ -n "$SCAN_URL" ]; then
+              echo "✅ Scan iniciado com sucesso!"
+              echo "🆔 App ID: $APP_ID"
+              echo "📝 Scan ID: $SCAN_ID"
+              echo "📊 Resultados ficarão disponíveis em: $SCAN_URL"
+            else
+              echo "⚠️ Scan iniciado, mas algumas informações do output estão faltando:"
+              echo "APP_ID: ${APP_ID:-'não definido'}"
+              echo "SCAN_ID: ${SCAN_ID:-'não definido'}"
+              echo "SCAN_URL: ${SCAN_URL:-'não definido'}"
+              exit 1
+            fi
+          else
+            echo "❌ Falha no scan de segurança"
+            exit 1
+          fi
           
       # Exemplo de como utilizar o Slack para notificar o resultado do scan
       # - name: Notificar no Slack
