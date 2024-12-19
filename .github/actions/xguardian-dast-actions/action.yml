@@ -359,7 +359,7 @@ runs:
         echo "Debug: APP_ID: ${APP_ID}"
 
         # URL da API (apenas primeira página)
-        API_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
+        API_URL="https://reporter.xguardianplatform.io/scans/${APP_ID}"
         echo "Debug: URL da API: ${API_URL}"
 
         # Captura a resposta completa junto com o código de status HTTP
