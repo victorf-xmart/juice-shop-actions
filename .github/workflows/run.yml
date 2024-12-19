@@ -41,11 +41,14 @@ jobs:
         id: xguardian
         uses: xmart-xguardian/xguardian-actions@main # ./.github/actions/xguardian-actions 
         with:
+          # Variáveis de segredo obrigatórias
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
+
+          # Opcionais (mas, com valores default)
           scan_directory: '.' # Analisando todo o código-fonte por padrão
           # scan_directory: 'dist' # Descomente e ajuste se quiser analisar apenas o código buildado
           team_id: '[1]'
