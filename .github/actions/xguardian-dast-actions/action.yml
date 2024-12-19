@@ -434,76 +434,76 @@ runs:
     #       exit 1
     #     fi
 
-    - name: Finalizar e validar outputs
-      id: final_outputs
-      shell: bash
-      run: |
-        if [ ! -f "/tmp/xguardian_scan_complete" ] || [ ! -s "/tmp/xguardian_scan_complete" ]; then
-          echo "::error title=XGuardian Scan::Arquivo de estado não encontrado ou vazio"
-          exit 1
-        fi
+    # - name: Finalizar e validar outputs
+    #   id: final_outputs
+    #   shell: bash
+    #   run: |
+    #     if [ ! -f "/tmp/xguardian_scan_complete" ] || [ ! -s "/tmp/xguardian_scan_complete" ]; then
+    #       echo "::error title=XGuardian Scan::Arquivo de estado não encontrado ou vazio"
+    #       exit 1
+    #     fi
 
-        # Lê os valores do arquivo de estado
-        IFS=':' read -r app_id scan_id < /tmp/xguardian_scan_complete
+    #     # Lê os valores do arquivo de estado
+    #     IFS=':' read -r app_id scan_id < /tmp/xguardian_scan_complete
 
-        # Valida os valores
-        if [ -z "$app_id" ] || [ -z "$scan_id" ]; then
-          echo "::error title=XGuardian Scan::Dados inválidos no arquivo de estado"
-          exit 1
-        fi
+    #     # Valida os valores
+    #     if [ -z "$app_id" ] || [ -z "$scan_id" ]; then
+    #       echo "::error title=XGuardian Scan::Dados inválidos no arquivo de estado"
+    #       exit 1
+    #     fi
 
-        # Define os outputs corretamente
-        echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
-        echo "scan_id=$scan_id" >> "$GITHUB_OUTPUT"
-        echo "scan_url=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans" >> "$GITHUB_OUTPUT"
+    #     # Define os outputs corretamente
+    #     echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
+    #     echo "scan_id=$scan_id" >> "$GITHUB_OUTPUT"
+    #     echo "scan_url=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans" >> "$GITHUB_OUTPUT"
 
-        # Define também no ambiente para compatibilidade
-        {
-          echo "APP_ID=$app_id"
-          echo "SCAN_ID=$scan_id"
-          echo "SCAN_URL=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
-        } >> "$GITHUB_ENV"
+    #     # Define também no ambiente para compatibilidade
+    #     {
+    #       echo "APP_ID=$app_id"
+    #       echo "SCAN_ID=$scan_id"
+    #       echo "SCAN_URL=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
+    #     } >> "$GITHUB_ENV"
 
-        # Log para debug
-        echo "Debug: Outputs definidos"
-        echo "app_id: $app_id"
-        echo "scan_id: $scan_id"
-        echo "scan_url: https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
+    #     # Log para debug
+    #     echo "Debug: Outputs definidos"
+    #     echo "app_id: $app_id"
+    #     echo "scan_id: $scan_id"
+    #     echo "scan_url: https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
 
-    - name: Salvar vulnerabilidades no banco de dados
-      if: ${{ inputs.save_vulns == 'true' }}
-      shell: bash
-      env:
-        APP_ID: ${{ env.APP_ID }}
-        API_TOKEN: ${{ inputs.api_token }}
-      run: |
-        PATCH_URL="https://uploader-mvp.xguardianplatform.io/accept_save_vulns"
-        DATA=$(cat << EOF
-        {
-          "app_id": ${APP_ID},
-          "accept_export": true
-        }
-        EOF
-        )
+    # - name: Salvar vulnerabilidades no banco de dados
+    #   if: ${{ inputs.save_vulns == 'true' }}
+    #   shell: bash
+    #   env:
+    #     APP_ID: ${{ env.APP_ID }}
+    #     API_TOKEN: ${{ inputs.api_token }}
+    #   run: |
+    #     PATCH_URL="https://uploader-mvp.xguardianplatform.io/accept_save_vulns"
+    #     DATA=$(cat << EOF
+    #     {
+    #       "app_id": ${APP_ID},
+    #       "accept_export": true
+    #     }
+    #     EOF
+    #     )
 
-        # Captura tanto o status HTTP quanto o corpo da resposta
-        RESPONSE=$(curl -sS -X PATCH "${PATCH_URL}" \
-          -H 'accept: application/json' \
-          -H 'Content-Type: application/json' \
-          -H "Authorization: Bearer ${API_TOKEN}" \
-          -d "${DATA}" \
-          -w "\n%{http_code}")
+    #     # Captura tanto o status HTTP quanto o corpo da resposta
+    #     RESPONSE=$(curl -sS -X PATCH "${PATCH_URL}" \
+    #       -H 'accept: application/json' \
+    #       -H 'Content-Type: application/json' \
+    #       -H "Authorization: Bearer ${API_TOKEN}" \
+    #       -d "${DATA}" \
+    #       -w "\n%{http_code}")
 
-        HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-        RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+    #     HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+    #     RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
 
-        echo "Status HTTP: $HTTP_STATUS"
-        echo "Resposta: $RESPONSE_BODY"
+    #     echo "Status HTTP: $HTTP_STATUS"
+    #     echo "Resposta: $RESPONSE_BODY"
 
-        if [ "$HTTP_STATUS" -eq 200 ]; then
-          echo "Vulnerabilidades salvas com sucesso no banco de dados."
-        else
-          echo "Erro ao salvar vulnerabilidades. Status: $HTTP_STATUS"
-          echo "Detalhes: $RESPONSE_BODY"
-          exit 1
-        fi
+    #     if [ "$HTTP_STATUS" -eq 200 ]; then
+    #       echo "Vulnerabilidades salvas com sucesso no banco de dados."
+    #     else
+    #       echo "Erro ao salvar vulnerabilidades. Status: $HTTP_STATUS"
+    #       echo "Detalhes: $RESPONSE_BODY"
+    #       exit 1
+    #     fi
