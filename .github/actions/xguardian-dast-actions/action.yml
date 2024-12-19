@@ -159,61 +159,61 @@ runs:
         && sudo apt update \
         && sudo apt install gh -y
 
-      - name: Fazer login na API e armazenar o token
-        shell: bash
-        env:
-          API_EMAIL: ${{ inputs.api_email }}
-          API_PASSWORD: ${{ inputs.api_password }}
-          API_TOKEN: ${{ inputs.api_token }}
-          GITHUB_TOKEN: ${{ inputs.gh_token }}
-        run: |
-          # Remover ou comentar estes logs de debug em produção
-          echo "Debug: API_EMAIL: ${API_EMAIL}"
-          echo "Debug: API_PASSWORD: ${API_PASSWORD}"
-          echo "Debug: API_TOKEN: ${API_TOKEN}"
+    - name: Fazer login na API e armazenar o token
+      shell: bash
+      env:
+        API_EMAIL: ${{ inputs.api_email }}
+        API_PASSWORD: ${{ inputs.api_password }}
+        API_TOKEN: ${{ inputs.api_token }}
+        GITHUB_TOKEN: ${{ inputs.gh_token }}
+      run: |
+        # Remover ou comentar estes logs de debug em produção
+        echo "Debug: API_EMAIL: ${API_EMAIL}"
+        echo "Debug: API_PASSWORD: ${API_PASSWORD}"
+        echo "Debug: API_TOKEN: ${API_TOKEN}"
 
-          NEED_NEW_TOKEN=true
-          if [ -n "$API_TOKEN" ]; then
-            # Testa para verificar se o token ainda é válido
-            TEST_RESPONSE=$(curl -sS -X GET 'https://uploader-mvp.xguardianplatform.io/get_apps_total' \
-              -H "Authorization: Bearer ${API_TOKEN}" \
-              -w "%{http_code}")
+        NEED_NEW_TOKEN=true
+        if [ -n "$API_TOKEN" ]; then
+          # Testa para verificar se o token ainda é válido
+          TEST_RESPONSE=$(curl -sS -X GET 'https://uploader-mvp.xguardianplatform.io/get_apps_total' \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            -w "%{http_code}")
+          
+          if [[ "$TEST_RESPONSE" == *"200"* ]]; then
+            echo "::debug::Token existente ainda é válido."
+            echo "API_TOKEN=$API_TOKEN" >> $GITHUB_ENV
+            NEED_NEW_TOKEN=false
+          fi
+        fi
+
+        # Se o token não é válido, gera um novo token
+        if [ "$NEED_NEW_TOKEN" = true ]; then
+          response=$(curl -X 'POST' 'https://auth.xguardianplatform.io/login' \
+            -H 'accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "email": "'"${API_EMAIL}"'",
+              "password": "'"${API_PASSWORD}"'"
+            }' | jq -r '.token')
             
-            if [[ "$TEST_RESPONSE" == *"200"* ]]; then
-              echo "::debug::Token existente ainda é válido."
-              echo "API_TOKEN=$API_TOKEN" >> $GITHUB_ENV
-              NEED_NEW_TOKEN=false
-            fi
+          if [ -n "$response" ] && [ "$response" != "null" ]; then
+            echo -n "$response" | gh secret set API_TOKEN
+            echo "API_TOKEN=$response" >> $GITHUB_ENV
+            echo "Token atualizado com sucesso."
           fi
+        fi
 
-          # Se o token não é válido, gera um novo token
-          if [ "$NEED_NEW_TOKEN" = true ]; then
-            response=$(curl -X 'POST' 'https://auth.xguardianplatform.io/login' \
-              -H 'accept: application/json' \
-              -H 'Content-Type: application/json' \
-              -d '{
-                "email": "'"${API_EMAIL}"'",
-                "password": "'"${API_PASSWORD}"'"
-              }' | jq -r '.token')
-              
-            if [ -n "$response" ] && [ "$response" != "null" ]; then
-              echo -n "$response" | gh secret set API_TOKEN
-              echo "API_TOKEN=$response" >> $GITHUB_ENV
-              echo "Token atualizado com sucesso."
-            fi
-          fi
+        # Verifica se o token foi salvo no GitHub Secrets
+        echo "::debug::Verificando se o token foi salvo no GitHub Secrets..."
+        gh secret list | grep API_TOKEN && echo "::debug::Token encontrado no GitHub Secrets." || echo "::error::Token não encontrado no GitHub Secrets."
 
-          # Verifica se o token foi salvo no GitHub Secrets
-          echo "::debug::Verificando se o token foi salvo no GitHub Secrets..."
-          gh secret list | grep API_TOKEN && echo "::debug::Token encontrado no GitHub Secrets." || echo "::error::Token não encontrado no GitHub Secrets."
-
-          # Verifica se o token foi salvo na variável de ambiente
-          echo "::debug::Verificando se o token foi salvo na variável de ambiente..."
-          if [ -n "$API_TOKEN" ]; then
-            echo "::debug::Token encontrado na variável de ambiente."
-          else
-            echo "::error::Token não encontrado na variável de ambiente."
-          fi
+        # Verifica se o token foi salvo na variável de ambiente
+        echo "::debug::Verificando se o token foi salvo na variável de ambiente..."
+        if [ -n "$API_TOKEN" ]; then
+          echo "::debug::Token encontrado na variável de ambiente."
+        else
+          echo "::error::Token não encontrado na variável de ambiente."
+        fi
 
     - name: Verificar se a aplicação existe, caso contrário, cria a aplicação
       shell: bash
