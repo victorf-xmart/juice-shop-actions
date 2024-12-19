@@ -63,6 +63,7 @@ jobs:
           exclude: ""
           pdf: "false"
 
+      # Exemplo de como verificar os outputs do scan
       - name: Debug outputs
         run: |
           echo "app_id: ${{ steps.xguardian.outputs.app_id }}"
