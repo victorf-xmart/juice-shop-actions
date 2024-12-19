@@ -378,6 +378,13 @@ runs:
           exit 1
         fi
 
+        # Verifica se a resposta contém um campo "detail" indicando erro
+        if [ "$(echo "$RESPONSE" | jq -r 'has("detail")')" = "true" ]; then
+          echo "Erro na resposta da API:"
+          echo "$RESPONSE" | jq -r '.detail'
+          exit 1
+        fi
+
         # Debug da resposta (limitado aos campos relevantes)
         echo "Debug: Scans encontrados:"
         echo "$RESPONSE" | jq -r '.data[] | {scanuuid, id, scan_status, created_at}'
@@ -415,7 +422,6 @@ runs:
         else
           echo "Debug: Resposta não contém dados válidos"
         fi
-
     # - name: Finalizar e validar outputs
     #   id: final_outputs
     #   shell: bash
