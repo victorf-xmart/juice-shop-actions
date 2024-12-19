@@ -96,6 +96,12 @@ jobs:
           exclude: ""
           pdf: "false"
 
+      # - name: Debug outputs DAST
+      #   run: |
+      #     echo "app_id: ${{ steps.xguardian-dast.outputs.app_id }}"
+      #     echo "scan_id: ${{ steps.xguardian-dast.outputs.scan_id }}"
+      #     echo "scan_url: ${{ steps.xguardian-dast.outputs.scan_url }}"
+
       # Exemplo de como checar os resultados do scan
       # - name: Verificar status do scan
       #   if: always()
