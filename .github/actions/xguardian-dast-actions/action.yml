@@ -363,13 +363,13 @@ runs:
         echo "Debug: URL da API: ${API_URL}"
 
         # Captura a resposta completa
+        echo "Debug: Token de autorização: ${API_TOKEN}"
         RESPONSE=$(curl -sS -X GET "${API_URL}" \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
 
         # Imprime a resposta completa para depuração
-        echo "Resposta completa da API:"
-        echo "$RESPONSE"
+        echo "Resposta completa da API: ${RESPONSE}"
 
         # Verifica se a resposta é um JSON válido
         if ! echo "$RESPONSE" | jq . >/dev/null 2>&1; then
@@ -422,6 +422,7 @@ runs:
         else
           echo "Debug: Resposta não contém dados válidos"
         fi
+
     # - name: Finalizar e validar outputs
     #   id: final_outputs
     #   shell: bash
