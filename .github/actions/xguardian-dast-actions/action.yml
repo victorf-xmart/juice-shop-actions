@@ -315,9 +315,9 @@ runs:
 
         DATA=$(cat << EOF
         {
-          "app_id": ""${APP_ID}"",
+          "app_id": "128",
           "scan_version_dast": ""${SCAN_VERSION}"",
-          "site_url": ,
+          "site_url": "https://www.bancocn.com/",
           "auth_url": "",
           "logout_url": "",
           "authexist": false,
@@ -328,6 +328,9 @@ runs:
         }
         EOF
         )
+
+        echo "Payload do upload DAST:"
+        echo "$DATA"
 
         RESPONSE=$(curl -sS -X POST "${UPLOAD_DAST_URL}" \
           -H 'accept: application/json' \
