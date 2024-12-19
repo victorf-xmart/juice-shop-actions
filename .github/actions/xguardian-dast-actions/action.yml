@@ -363,6 +363,8 @@ runs:
         echo "Debug: URL da API: ${API_URL}"
 
         # Captura a resposta completa junto com o código de status HTTP
+        echo "Debug: Token de autorização: ${API_TOKEN}"
+        echo "Debug: URL da API: ${API_URL}"
         RESPONSE=$(curl -sS -w "%{http_code}" -o response.json -X GET "${API_URL}" \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
