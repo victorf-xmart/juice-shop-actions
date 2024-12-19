@@ -316,7 +316,7 @@ runs:
         DATA=$(cat << EOF
         {
           "app_id": "128",
-          "scan_version_dast": ""${SCAN_VERSION}"",
+          "scan_version_dast": "${SCAN_VERSION}",
           "site_url": "https://www.bancocn.com/",
           "auth_url": "",
           "logout_url": "",
