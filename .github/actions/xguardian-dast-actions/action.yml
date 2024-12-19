@@ -344,7 +344,7 @@ runs:
     - name: Obter ID do scan
       shell: bash
       env:
-        APP_ID: ${{ env.APP_ID }}
+        APP_ID: "128" # ${{ env.APP_ID }}
         API_TOKEN: ${{ inputs.api_token }}
         SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
