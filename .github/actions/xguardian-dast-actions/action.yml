@@ -24,54 +24,57 @@ inputs:
   app_name:
     description: "O nome da aplicação."
     required: true
-  scan_directory:
-    description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
-    default: "." # Root do projeto
-  team_id:
-    description: "O(s) ID(s) da(s) equipe(s)."
-    default: "[1]"
-  languages:
-    description: "A(s) linguagem(ns) da aplicação."
-    default: '["JavaScript"]'
-  description:
-    description: "A descrição da aplicação."
-    default: "Aplicação criada através do GitHub Actions - XGuardian"
-  policy_sast:
-    description: "O ID da política de SAST."
-    default: "0"
-  policy_sca:
-    description: "O ID da política de SCA."
-    default: "0"
-  policy_dast:
-    description: "O ID da política de DAST."
-    default: "0"
-  policy_container:
-    description: "O ID da política de Container."
-    default: "0"
-  microservices:
-    description: "A aplicação possui microserviços?"
-    default: "false"
-  microservices_data:
-    description: "O(s) dados do(s) microserviço(s): Nome(s) e linguagem(ns)."
-    default: '[{"name": "MS1", "language": ["JavaScript"]}]'
-  sast:
-    description: "Vai ser feito o scan SAST?"
-    default: '"true"'
-    type: string
-    pattern: "^true|false$"
-  sca:
-    description: "Vai ser feito o scan SCA?"
-    default: '"false"'
-    type: string
-    pattern: "^true|false$"
+  site_url:
+    description: "O URL do site a ser escaneado."
+    required: true
+  # scan_directory:
+  #   description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
+  #   default: "." # Root do projeto
+  # team_id:
+  #   description: "O(s) ID(s) da(s) equipe(s)."
+  #   default: "[1]"
+  # languages:
+  #   description: "A(s) linguagem(ns) da aplicação."
+  #   default: '["JavaScript"]'
+  # description:
+  #   description: "A descrição da aplicação."
+  #   default: "Aplicação criada através do GitHub Actions - XGuardian"
+  # policy_sast:
+  #   description: "O ID da política de SAST."
+  #   default: "0"
+  # policy_sca:
+  #   description: "O ID da política de SCA."
+  #   default: "0"
+  # policy_dast:
+  #   description: "O ID da política de DAST."
+  #   default: "0"
+  # policy_container:
+  #   description: "O ID da política de Container."
+  #   default: "0"
+  # microservices:
+  #   description: "A aplicação possui microserviços?"
+  #   default: "false"
+  # microservices_data:
+  #   description: "O(s) dados do(s) microserviço(s): Nome(s) e linguagem(ns)."
+  #   default: '[{"name": "MS1", "language": ["JavaScript"]}]'
+  # sast:
+  #   description: "Vai ser feito o scan SAST?"
+  #   default: '"true"'
+  #   type: string
+  #   pattern: "^true|false$"
+  # sca:
+  #   description: "Vai ser feito o scan SCA?"
+  #   default: '"false"'
+  #   type: string
+  #   pattern: "^true|false$"
   translate:
     description: "O relatório será traduzido para português do Brasil?"
     default: '"false"'
     type: string
     pattern: "^true|false$"
-  exclude:
-    description: "Diretórios ou arquivos a serem excluídos do scan."
-    default: '""'
+  # exclude:
+  #   description: "Diretórios ou arquivos a serem excluídos do scan."
+  #   default: '""'
   pdf:
     description: "O relatório será gerado em PDF detalhado?"
     default: '"false"'
@@ -290,152 +293,64 @@ runs:
       run: |
         echo "short_sha=${GITHUB_SHA:0:6}" >> $GITHUB_OUTPUT
 
-    - name: Obter URL de upload
+    - name: Realizar o scan DAST
+      id: xguardian-dast
       shell: bash
       env:
         APP_ID: ${{ env.APP_ID }}
-        SAST: ${{ inputs.sast }}
-        SCA: ${{ inputs.sca }}
+        API_TOKEN: ${{ inputs.api_token }}
+        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
+        APP_NAME: ${{ inputs.app_name }}
+        SITE_URL: ${{ inputs.site_url }}
+        SCAN_DIRECTORY: ${{ inputs.scan_directory }}
         TRANSLATE: ${{ inputs.translate }}
         EXCLUDE: ${{ inputs.exclude }}
         PDF: ${{ inputs.pdf }}
-        FILE_TYPE: "application/zip"
-        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
       run: |
-        # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
-        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
-        echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
-        echo "Debug: SCAN_VERSION limpo: ${CLEAN_SCAN_VERSION}"
-
-        UPLOAD_URL="https://uploader-mvp.xguardianplatform.io/upload-url"
-
-        # Limpa o APP_NAME também para garantir consistência
-        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
+        UPLOAD_DAST_URL="https://uploader-mvp.xguardianplatform.io/upload-dast"
 
         DATA=$(cat << EOF
         {
-          "app_id": ${APP_ID},
-          "scan_version": "${CLEAN_SCAN_VERSION}",
-          "file_type": "${FILE_TYPE}",
-          "sca": "${SCA}",
-          "sast": "${SAST}",
-          "translate": "${TRANSLATE}",
-          "exclude": "${EXCLUDE}",
-          "pdf": "${PDF}"
+          "app_id": ""${APP_ID}"",
+          "scan_version_dast": ""${SCAN_VERSION}"",
+          "site_url": ,
+          "auth_url": "",
+          "logout_url": "",
+          "authexist": false,
+          "userlogin": "",
+          "passwordlogin": "",
+          "translate": "false",
+          "pdf": "false"
         }
         EOF
         )
 
-        # Debug do payload formatado
-        echo "Debug: DATA (formatted):"
-        echo "${DATA}" | jq '.'
+        RESPONSE=$(curl -sS -X POST "${UPLOAD_DAST_URL}" \
+          -H 'accept: application/json' \
+          -H "Authorization: Bearer ${API_TOKEN}" \
+          -H 'Content-Type: application/json' \
+          -d "${DATA}")
 
-        # Debug do payload original
-        echo "Debug: DATA (raw): ${DATA}"
+        echo "Resposta do upload DAST:"
+        echo "$RESPONSE"
 
-        GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
-            -H 'accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            -d "${DATA}" | jq -r '.url')
-
-        if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
-          echo "Erro: Não foi possível obter a URL de upload"
-          exit 1
-        fi
-
-        echo "URL de Upload: ${GET_UPLOAD_URL}"
-        echo "GET_UPLOAD_URL=${GET_UPLOAD_URL}" >> $GITHUB_ENV
-
-    - name: Zipar os arquivos
-      shell: bash
-      env:
-        APP_NAME: ${{ inputs.app_name }}
-        SCAN_DIR: ${{ inputs.scan_directory }}
-      run: |
-        # Substituir caracteres especiais no nome do arquivo zip
-        SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
-        echo "SAFE_APP_NAME=${SAFE_APP_NAME}" >> $GITHUB_ENV
-
-        echo "Debug: SCAN_DIR configurado como: ${SCAN_DIR}"
-        echo "Debug: Estrutura do diretório atual:"
-        pwd
-        tree -L 2 || ls -R  # tenta usar tree, se não disponível usa ls -R
-
-        # Verifica se o diretório existe
-        if [ ! -d "$SCAN_DIR" ]; then
-          echo "Erro: Diretório '$SCAN_DIR' não encontrado no workspace"
-          echo "Por favor, verifique se o diretório existe ou use '.' para o diretório raiz"
-          exit 1
-        fi
-
-        echo "Debug: Diretório atual antes do zip: $(pwd)"
-        echo "Debug: Conteúdo do diretório $SCAN_DIR:"
-        ls -la "$SCAN_DIR"
-
-        echo "Debug: Criando zip em ${SAFE_APP_NAME}.zip"
-
-        # Criar o zip no diretório atual
-        if [ "$SCAN_DIR" = "." ]; then
-          # Se for diretório raiz, exclui alguns diretórios comuns
-          zip -r "${SAFE_APP_NAME}.zip" . -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
-        else
-          # Se for um diretório específico
-          zip -r "${SAFE_APP_NAME}.zip" "$SCAN_DIR" -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
-        fi
-
-        # Verificar se o arquivo zip foi criado
-        if [ ! -f "${SAFE_APP_NAME}.zip" ]; then
-          echo "Erro: Arquivo zip não foi criado com sucesso"
-          ls -la
-          exit 1
-        fi
-
-        echo "Debug: Arquivo zip criado em: $(pwd)/${SAFE_APP_NAME}.zip"
-        echo "Debug: Tamanho do arquivo zip:"
-        du -h "${SAFE_APP_NAME}.zip"
-
-    - name: Upload da aplicação para o scan
-      shell: bash
-      env:
-        SAFE_APP_NAME: ${{ env.SAFE_APP_NAME }}
-        APP_NAME: ${{ inputs.app_name }}
-        APP_ID: ${{ env.APP_ID }}
-        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
-        GET_UPLOAD_URL: ${{ env.GET_UPLOAD_URL }}
-      run: |
-        echo "Debug: Iniciando upload com SCAN_VERSION: ${SCAN_VERSION}"
-
-        # Verifica se o arquivo zip existe
-        filePath="./${SAFE_APP_NAME}.zip"
-
-        echo "Debug: Diretório atual: $(pwd)"
-        echo "Debug: Listando arquivos:"
-        ls -la
-
-        echo "Debug: Procurando arquivo em: ${filePath}"
-        if [ ! -f "${filePath}" ]; then
-          echo "Erro: Arquivo ${filePath} não encontrado"
-          exit 1
-        fi
-
-        echo "Debug: Tamanho do arquivo:"
-        du -h "${filePath}"
-
-        # A URL já deve vir pronta para uso do endpoint anterior
-        echo "Debug: Upload URL: ${GET_UPLOAD_URL}"
-
-        # Upload com progresso visível e verificação de status
-        echo "Iniciando upload..."
-        if curl --progress-bar --location --request PUT "${GET_UPLOAD_URL}" \
-          --header 'Content-Type: application/zip' \
-          --data-binary "@${filePath}"; then
-          echo "Upload realizado com sucesso!"
-          echo "::notice title=XGuardian Scan::Upload concluído! Aguarde alguns segundos para obter o ID do scan..."
-        else
-          echo "::error title=XGuardian Scan::Falha no upload do arquivo."
-          exit 1
-        fi
+    #         curl -X 'POST' \
+    #   'https://uploader-mvp.xguardianplatform.io/upload-dast' \
+    #   -H 'accept: application/json' \
+    #   -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE5ZTYyMDM0LWQzMmUtNDY3OS1iZTAwLTFkOTI2NmFjNmY0YSIsInNjYW5zQXZhaWxhYmxlIjowLCJpc0ludGVybiI6InRydWUiLCJ4bWFydC1hZG1pbiI6IlNIJVNzVlg0RXlCZVJuMnRONWZTVzd2dE1oJEN2TjNuYzZYaXB0Z1ZqOWpNOFhvZHBwZHFOXkBXVmI2OGdNc2MiLCJyb2xlcyI6eyJjcmVhdGVfYXBwIjp0cnVlLCJjcmVhdGVfc2NhbiI6dHJ1ZX0sIndlYmhvb2siOiJmYWxzZSIsImV4cCI6MTczNDYzOTQ4NX0.7u5XGUI1dASKxPF3IsHtAVFYI2LT2_x_JHdqV32t0suPWuBKj0aLeY4XCDYyftUVgMWG6RI4A9lGSCxq0OcTXA' \
+    #   -H 'Content-Type: application/json' \
+    #   -d '{
+    #     "app_id": "128",
+    #     "scan_version_dast": "itsecgames",
+    #     "site_url": "http://www.itsecgames.com/index.htm",
+    #     "auth_url": "",
+    #     "logout_url": "",
+    #     "authexist": false,
+    #     "userlogin": "",
+    #     "passwordlogin": "",
+    #     "translate": "false",
+    #     "pdf": "false"
+    # }'
 
     - name: Obter ID do scan
       shell: bash

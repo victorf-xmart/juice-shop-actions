@@ -79,22 +79,6 @@ jobs:
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
-          scan_directory: '.' # Analisando todo o código-fonte por padrão
-          team_id: '[1]'
-          languages: '["JavaScript"]'
-          description: "Aplicação criada através do GitHub Actions - XGuardian DAST"
-          policy_sast: '0'
-          policy_sca: '0'
-          policy_dast: '1'
-          policy_container: '0'
-          microservices: "false"
-          microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
-          sast: "false"
-          sca: "false"
-          dast: "true"
-          translate: "false"
-          exclude: ""
-          pdf: "false"
 
       # - name: Debug outputs DAST
       #   run: |
