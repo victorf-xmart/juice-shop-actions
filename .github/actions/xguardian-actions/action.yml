@@ -9,6 +9,7 @@ branding:
 version: v24.12.1
 
 inputs:
+  # Variáveis de segredo obrigatórias
   api_email:
     description: "O e-mail para login/autenticação na API."
     required: true
@@ -24,6 +25,8 @@ inputs:
   app_name:
     description: "O nome da aplicação."
     required: true
+
+  # Opcionais (mas, com valores default)
   scan_directory:
     description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
     default: "." # Root do projeto
