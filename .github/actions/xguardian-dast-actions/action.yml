@@ -317,7 +317,7 @@ runs:
         {
           "app_id": "128",
           "scan_version_dast": "${SCAN_VERSION}",
-          "site_url": "https://www.bancocn.com/",
+          "site_url": "http://www.bancocn.com/",
           "auth_url": "",
           "logout_url": "",
           "authexist": false,
