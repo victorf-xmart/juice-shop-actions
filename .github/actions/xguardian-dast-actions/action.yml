@@ -9,7 +9,7 @@ branding:
 version: v24.12.1
 
 inputs:
-  ### Secrets obrigatórios
+  # Secrets obrigatórios
   api_email:
     description: "O e-mail para login/autenticação na API."
     required: true
