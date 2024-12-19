@@ -362,37 +362,40 @@ runs:
         API_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
         echo "Debug: URL da API: ${API_URL}"
 
-        # Captura a resposta completa
-        echo "Debug: Token de autorização: ${API_TOKEN}"
-        RESPONSE=$(curl -sS -X GET "${API_URL}" \
+        # Captura a resposta completa junto com o código de status HTTP
+        RESPONSE=$(curl -sS -w "%{http_code}" -o response.json -X GET "${API_URL}" \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
 
+        HTTP_STATUS=$(tail -n1 <<< "$RESPONSE")
+        RESPONSE_BODY=$(cat response.json)
+
         # Imprime a resposta completa para depuração
-        echo "Resposta completa da API: ${RESPONSE}"
+        echo "Código de status HTTP: ${HTTP_STATUS}"
+        echo "Resposta completa da API: ${RESPONSE_BODY}"
 
         # Verifica se a resposta é um JSON válido
-        if ! echo "$RESPONSE" | jq . >/dev/null 2>&1; then
+        if ! echo "$RESPONSE_BODY" | jq . >/dev/null 2>&1; then
           echo "Debug: Resposta não é um JSON válido:"
-          echo "$RESPONSE"
+          echo "$RESPONSE_BODY"
           exit 1
         fi
 
         # Verifica se a resposta contém um campo "detail" indicando erro
-        if [ "$(echo "$RESPONSE" | jq -r 'has("detail")')" = "true" ]; then
+        if [ "$(echo "$RESPONSE_BODY" | jq -r 'has("detail")')" = "true" ]; then
           echo "Erro na resposta da API:"
-          echo "$RESPONSE" | jq -r '.detail'
+          echo "$RESPONSE_BODY" | jq -r '.detail'
           exit 1
         fi
 
         # Debug da resposta (limitado aos campos relevantes)
         echo "Debug: Scans encontrados:"
-        echo "$RESPONSE" | jq -r '.data[] | {scanuuid, id, scan_status, created_at}'
+        echo "$RESPONSE_BODY" | jq -r '.data[] | {scanuuid, id, scan_status, created_at}'
 
         # Verifica se a resposta tem a estrutura esperada e contém dados
-        if [ "$(echo "$RESPONSE" | jq -r 'has("data")')" = "true" ] && [ "$(echo "$RESPONSE" | jq -r '.data | length')" -gt 0 ]; then
+        if [ "$(echo "$RESPONSE_BODY" | jq -r 'has("data")')" = "true" ] && [ "$(echo "$RESPONSE_BODY" | jq -r '.data | length')" -gt 0 ]; then
           # Busca o scan com o SCAN_VERSION específico
-          SCAN_DATA=$(echo "$RESPONSE" | jq -r --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version)')
+          SCAN_DATA=$(echo "$RESPONSE_BODY" | jq -r --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version)')
 
           if [ -n "$SCAN_DATA" ] && [ "$SCAN_DATA" != "null" ]; then
             SCAN_ID=$(echo "$SCAN_DATA" | jq -r '.id')
