@@ -1,165 +1,165 @@
-name: Build and Security Scan
-# coment para testes workflow
+# name: Build and Security Scan
+# # coment para testes workflow
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+#   workflow_dispatch:
 
-jobs:
-  build-and-scan:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
+# jobs:
+#   build-and-scan:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#       security-events: write
       
-    steps:
-      # Exemplo de como checar o código-fonte do repositório
-      - name: Checar o código-fonte do repositório
-        uses: actions/checkout@v4
+#     steps:
+#       # Exemplo de como checar o código-fonte do repositório
+#       - name: Checar o código-fonte do repositório
+#         uses: actions/checkout@v4
 
-      # Exemplo de como instalar e configurar o Node.js
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
-      #     cache: 'npm'
+#       # Exemplo de como instalar e configurar o Node.js
+#       # - name: Setup Node.js
+#       #   uses: actions/setup-node@v4
+#       #   with:
+#       #     node-version: '20'
+#       #     cache: 'npm'
       
-      # Exemplo de como instalar as dependências de uma aplicação Node.js
-      # - name: Install dependencies
-      #   run: npm ci
+#       # Exemplo de como instalar as dependências de uma aplicação Node.js
+#       # - name: Install dependencies
+#       #   run: npm ci
 
-      # Exemplo de como buildar uma aplicação Node.js
-      # - name: Build application
-      #   run: npm run build
-      # Assumindo que isso gera os arquivos em ./dist
+#       # Exemplo de como buildar uma aplicação Node.js
+#       # - name: Build application
+#       #   run: npm run build
+#       # Assumindo que isso gera os arquivos em ./dist
 
-      # Exemplo de como executar o XGuardian Security Scan
-      - name: Executar scan de segurança
-        id: xguardian
-        uses: xmart-xguardian/xguardian-actions@main # ./.github/actions/xguardian-actions
-        with:
-          # Variáveis de segredo obrigatórias
-          api_email: ${{ secrets.API_EMAIL }}
-          api_password: ${{ secrets.API_PASSWORD }}
-          api_token: ${{ secrets.API_TOKEN }}
-          gh_token: ${{ secrets.GH_TOKEN }}
-          app_name: ${{ github.event.repository.name }}
+#       # Exemplo de como executar o XGuardian Security Scan
+#       - name: Executar scan de segurança
+#         id: xguardian
+#         uses: xmart-xguardian/xguardian-actions@main # ./.github/actions/xguardian-actions
+#         with:
+#           # Variáveis de segredo obrigatórias
+#           api_email: ${{ secrets.API_EMAIL }}
+#           api_password: ${{ secrets.API_PASSWORD }}
+#           api_token: ${{ secrets.API_TOKEN }}
+#           gh_token: ${{ secrets.GH_TOKEN }}
+#           app_name: ${{ github.event.repository.name }}
 
-          # Opcionais (mas, com valores default)
-          # Configurações para criar uma aplicação
-          scan_directory: '.' # Analisando todo o código-fonte por padrão
-          # scan_directory: 'dist' # Descomente e ajuste se quiser analisar apenas o código buildado
-          team_id: '[1]'
-          languages: '["JavaScript"]'
-          description: "Aplicação criada através do GitHub Actions - XGuardian"
-          policy_sast: '0'
-          policy_sca: '0'
-          policy_dast: '0'
-          microservices: "false"
-          microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
-          sast: "false"
-          sca: "false"
-          dast: "true"
-          translate: "false"
-          exclude: ""
-          pdf: "false"
+#           # Opcionais (mas, com valores default)
+#           # Configurações para criar uma aplicação
+#           scan_directory: '.' # Analisando todo o código-fonte por padrão
+#           # scan_directory: 'dist' # Descomente e ajuste se quiser analisar apenas o código buildado
+#           team_id: '[1]'
+#           languages: '["JavaScript"]'
+#           description: "Aplicação criada através do GitHub Actions - XGuardian"
+#           policy_sast: '0'
+#           policy_sca: '0'
+#           policy_dast: '0'
+#           microservices: "false"
+#           microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
+#           sast: "false"
+#           sca: "false"
+#           dast: "true"
+#           translate: "false"
+#           exclude: ""
+#           pdf: "false"
 
-          # Scan DAST
-          site_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/"
-          auth_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/login"
-          logout_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/logout"
-          auth_exist: false
-          user_login: "abcdef"
-          password_login: "123456"
+#           # Scan DAST
+#           site_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/"
+#           auth_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/login"
+#           logout_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/logout"
+#           auth_exist: false
+#           user_login: "abcdef"
+#           password_login: "123456"
 
-      # Exemplo de como verificar os outputs do scan
-      - name: Debug outputs
-        run: |
-          echo "app_id: ${{ steps.xguardian.outputs.app_id }}"
-          echo "scan_id: ${{ steps.xguardian.outputs.scan_id }}"
-          echo "scan_url: ${{ steps.xguardian.outputs.scan_url }}"
+#       # Exemplo de como verificar os outputs do scan
+#       - name: Debug outputs
+#         run: |
+#           echo "app_id: ${{ steps.xguardian.outputs.app_id }}"
+#           echo "scan_id: ${{ steps.xguardian.outputs.scan_id }}"
+#           echo "scan_url: ${{ steps.xguardian.outputs.scan_url }}"
 
-      # Exemplo de como checar os resultados do scan
-      - name: Verificar status do scan
-        if: always()
-        env:
-          APP_ID: ${{ steps.xguardian.outputs.app_id }}
-          SCAN_ID: ${{ steps.xguardian.outputs.scan_id }}
-          SCAN_URL: ${{ steps.xguardian.outputs.scan_url }}
-        run: |
-          if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
-            # Verificar se as variáveis estão definidas
-            if [ -n "$APP_ID" ] && [ -n "$SCAN_ID" ] && [ -n "$SCAN_URL" ]; then
-              echo "✅ Scan iniciado com sucesso!"
-              echo "🆔 App ID: $APP_ID"
-              echo "📝 Scan ID: $SCAN_ID"
-              echo "📊 Resultados ficarão disponíveis em: $SCAN_URL"
-            else
-              echo "⚠️ Scan iniciado, mas algumas informações do output estão faltando:"
-              echo "APP_ID: ${APP_ID:-'não definido'}"
-              echo "SCAN_ID: ${SCAN_ID:-'não definido'}"
-              echo "SCAN_URL: ${SCAN_URL:-'não definido'}"
-              exit 1
-            fi
-          else
-            echo "❌ Falha no scan de segurança"
-            exit 1
-          fi
+#       # Exemplo de como checar os resultados do scan
+#       - name: Verificar status do scan
+#         if: always()
+#         env:
+#           APP_ID: ${{ steps.xguardian.outputs.app_id }}
+#           SCAN_ID: ${{ steps.xguardian.outputs.scan_id }}
+#           SCAN_URL: ${{ steps.xguardian.outputs.scan_url }}
+#         run: |
+#           if [ "${{ steps.xguardian.outcome }}" == "success" ]; then
+#             # Verificar se as variáveis estão definidas
+#             if [ -n "$APP_ID" ] && [ -n "$SCAN_ID" ] && [ -n "$SCAN_URL" ]; then
+#               echo "✅ Scan iniciado com sucesso!"
+#               echo "🆔 App ID: $APP_ID"
+#               echo "📝 Scan ID: $SCAN_ID"
+#               echo "📊 Resultados ficarão disponíveis em: $SCAN_URL"
+#             else
+#               echo "⚠️ Scan iniciado, mas algumas informações do output estão faltando:"
+#               echo "APP_ID: ${APP_ID:-'não definido'}"
+#               echo "SCAN_ID: ${SCAN_ID:-'não definido'}"
+#               echo "SCAN_URL: ${SCAN_URL:-'não definido'}"
+#               exit 1
+#             fi
+#           else
+#             echo "❌ Falha no scan de segurança"
+#             exit 1
+#           fi
           
-      # Exemplo de como utilizar o Slack para notificar o resultado do scan
-      # - name: Notificar no Slack
-      #   uses: rtCamp/action-slack-notify@v2
-      #   env:
-      #     SLACK_WEBHOOK: secrets.SLACK_WEBHOOK
-      #     SLACK_MESSAGE: |
-      #       Build e Scan concluídos
-      #       Repositório: github.repository
-      #       Branch: github.ref_name
-      #       Resultados: steps.xguardian.outputs.scan_url
+#       # Exemplo de como utilizar o Slack para notificar o resultado do scan
+#       # - name: Notificar no Slack
+#       #   uses: rtCamp/action-slack-notify@v2
+#       #   env:
+#       #     SLACK_WEBHOOK: secrets.SLACK_WEBHOOK
+#       #     SLACK_MESSAGE: |
+#       #       Build e Scan concluídos
+#       #       Repositório: github.repository
+#       #       Branch: github.ref_name
+#       #       Resultados: steps.xguardian.outputs.scan_url
 
-      # - name: Notificar no Microsoft Teams
-      #   uses: aliencube/microsoft-teams-actions@v0.8.0
-      #   with:
-      #     webhook_uri: secrets.MS_TEAMS_WEBHOOK_URI
-      #     title: "Resultados do scan de segurança"
-      #     summary: "XGuardian Security Scan concluído"
-      #     sections: |
-      #       [{
-      #         "activityTitle": "Resultados do scan de segurança",
-      #         "activitySubtitle": "${{ github.repository  - ${{ github.ref_name ",
-      #         "facts": [
-      #           {
-      #             "name": "Status",
-      #             "value": "${{ job.status "
-      #           },
-      #           {
-      #             "name": "Scan ID",
-      #             "value": "${{ steps.xguardian.outputs.scan_id "
-      #           }
-      #         ],
-      #         "potentialAction": [
-      #           {
-      #             "@type": "OpenUri",
-      #             "name": "View Results",
-      #             "targets": [
-      #               {
-      #                 "os": "default",
-      #                 "uri": "${{ steps.xguardian.outputs.scan_url "
-      #               }
-      #             ]
-      #           }
-      #         ]
-      #       }]
+#       # - name: Notificar no Microsoft Teams
+#       #   uses: aliencube/microsoft-teams-actions@v0.8.0
+#       #   with:
+#       #     webhook_uri: secrets.MS_TEAMS_WEBHOOK_URI
+#       #     title: "Resultados do scan de segurança"
+#       #     summary: "XGuardian Security Scan concluído"
+#       #     sections: |
+#       #       [{
+#       #         "activityTitle": "Resultados do scan de segurança",
+#       #         "activitySubtitle": "${{ github.repository  - ${{ github.ref_name ",
+#       #         "facts": [
+#       #           {
+#       #             "name": "Status",
+#       #             "value": "${{ job.status "
+#       #           },
+#       #           {
+#       #             "name": "Scan ID",
+#       #             "value": "${{ steps.xguardian.outputs.scan_id "
+#       #           }
+#       #         ],
+#       #         "potentialAction": [
+#       #           {
+#       #             "@type": "OpenUri",
+#       #             "name": "View Results",
+#       #             "targets": [
+#       #               {
+#       #                 "os": "default",
+#       #                 "uri": "${{ steps.xguardian.outputs.scan_url "
+#       #               }
+#       #             ]
+#       #           }
+#       #         ]
+#       #       }]
 
-      # - name: Notificar no Zoom Chat
-      #   run: |
-      #     curl -X POST "https://zoom.us/v2/im/chat/messages" \
-      #     -H "Authorization: Bearer ${{ secrets.ZOOM_CHAT_TOKEN " \
-      #     -H "Content-Type: application/json" \
-      #     -d '{
-      #       "to_channel": "security-channel",
-      #       "message": "🔒 Security Scan completed\nRepository: ${{ github.repository \nResults: ${{ steps.xguardian.outputs.scan_url "
-      #     }'
+#       # - name: Notificar no Zoom Chat
+#       #   run: |
+#       #     curl -X POST "https://zoom.us/v2/im/chat/messages" \
+#       #     -H "Authorization: Bearer ${{ secrets.ZOOM_CHAT_TOKEN " \
+#       #     -H "Content-Type: application/json" \
+#       #     -d '{
+#       #       "to_channel": "security-channel",
+#       #       "message": "🔒 Security Scan completed\nRepository: ${{ github.repository \nResults: ${{ steps.xguardian.outputs.scan_url "
+#       #     }'
