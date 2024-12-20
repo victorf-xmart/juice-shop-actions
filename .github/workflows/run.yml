@@ -1,3 +1,27 @@
+name: Security Scan
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout do código fonte
+      - uses: actions/checkout@v4
+
+      # Execução do scan
+      - name: XGuardian Security Scan
+        uses: xmart-xguardian/xguardian-actions@main
+        with:
+          api_email: ${{ secrets.API_EMAIL }}
+          api_password: ${{ secrets.API_PASSWORD }}
+          api_token: ${{ secrets.API_TOKEN }}
+          gh_token: ${{ secrets.GH_TOKEN }}
+          app_name: ${{ github.event.repository.name }}
+          # ... outros parâmetros de configuração (opcional)...
+
 # name: Build and Security Scan
 # # coment para testes workflow
 
