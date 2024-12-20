@@ -237,7 +237,6 @@ runs:
         POLICY_CONTAINER: ${{ inputs.policy_container }}
         MICROSERVICES: ${{ inputs.microservices }}
         MICROSERVICES_DATA: ${{ inputs.microservices_data }}
-
       run: |
         # Converte caracteres especiais para espaços, mantendo espaços existentes
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
