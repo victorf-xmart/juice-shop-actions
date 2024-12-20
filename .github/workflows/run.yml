@@ -20,7 +20,9 @@ jobs:
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
-          # ... outros parâmetros de configuração (opcional)...
+          dast: "true"
+          site_url: "http://www.bancocn.com/"
+
 
 # name: Build and Security Scan
 # # coment para testes workflow
