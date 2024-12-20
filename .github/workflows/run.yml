@@ -22,7 +22,12 @@ jobs:
           app_name: ${{ github.event.repository.name }}
           dast: "true"
           site_url: "http://www.bancocn.com/"
-
+          auth_url: ""
+          logout_url: ""
+          user_login: ""
+          password_login: ""
+          translate: false
+          pdf: false
 
 # name: Build and Security Scan
 # # coment para testes workflow
