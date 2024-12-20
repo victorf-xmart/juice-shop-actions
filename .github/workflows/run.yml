@@ -39,7 +39,7 @@ jobs:
       # Exemplo de como executar o XGuardian Security Scan
       - name: Executar scan de segurança
         id: xguardian
-        uses: xmart-xguardian/xguardian-actions@main # ./.github/actions/xguardian-actions 
+        uses: ./.github/actions/xguardian-actions # xmart-xguardian/xguardian-actions@main
         with:
           # Variáveis de segredo obrigatórias
           api_email: ${{ secrets.API_EMAIL }}
@@ -49,6 +49,7 @@ jobs:
           app_name: ${{ github.event.repository.name }}
 
           # Opcionais (mas, com valores default)
+          # Configurações para criar uma aplicação
           scan_directory: '.' # Analisando todo o código-fonte por padrão
           # scan_directory: 'dist' # Descomente e ajuste se quiser analisar apenas o código buildado
           team_id: '[1]'
@@ -60,11 +61,20 @@ jobs:
           policy_container: '0'
           microservices: "false"
           microservices_data: '[{"name": "MS1", "language": ["JavaScript"]}]'
-          sast: "true"
+          sast: "false"
           sca: "false"
+          dast: "true"
           translate: "false"
           exclude: ""
           pdf: "false"
+
+          # Scan DAST
+          site_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/"
+          auth_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/login"
+          logout_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/logout"
+          auth_exist: false
+          user_login: "abcdef"
+          password_login: "123456"
 
       # Exemplo de como verificar os outputs do scan
       - name: Debug outputs
