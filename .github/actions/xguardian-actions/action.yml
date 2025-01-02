@@ -519,6 +519,7 @@ runs:
         done
 
     - name: Obter ID(s) do(s) scan(s) (SAST e/ou SCA ou DAST)
+      if: ${{ inputs.get_scan_id == true }}
       shell: bash
       env:
         APP_ID: ${{ env.APP_ID }}
@@ -609,6 +610,7 @@ runs:
         fi
 
     - name: Finalizar e validar outputs
+      if: ${{ inputs.get_scan_id == true }}
       id: final_outputs
       shell: bash
       run: |
