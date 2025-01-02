@@ -318,7 +318,7 @@ runs:
         echo "short_sha=${GITHUB_SHA:0:6}" >> $GITHUB_OUTPUT
 
     - name: Criar o Scan SAST e/ou SCA (Obter URL de upload)
-      if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
+      if: ${{ inputs.sast == 'true' || inputs.sca == 'true' || always() }}
       shell: bash
       env:
         APP_ID: ${{ env.APP_ID }}
@@ -377,7 +377,7 @@ runs:
         echo "GET_UPLOAD_URL=${GET_UPLOAD_URL}" >> $GITHUB_ENV
 
     - name: Realizar o scan DAST
-      if: ${{ inputs.dast == 'true' }}
+      if: ${{ inputs.dast == 'true' || always() }}
       shell: bash
       env:
         API_TOKEN: ${{ inputs.api_token }}
@@ -423,7 +423,7 @@ runs:
         echo "$RESPONSE"
 
     - name: Zipar os arquivos
-      if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
+      if: ${{ inputs.sast == 'true' || inputs.sca == 'true' || always() }}
       shell: bash
       env:
         APP_NAME: ${{ inputs.app_name }}
@@ -472,7 +472,7 @@ runs:
         du -h "${SAFE_APP_NAME}.zip"
 
     - name: Upload da aplicação para o scan (SAST e/ou SCA)
-      if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
+      if: ${{ inputs.sast == 'true' || inputs.sca == 'true' || always() }}
       shell: bash
       env:
         SAFE_APP_NAME: ${{ env.SAFE_APP_NAME }}
@@ -516,7 +516,7 @@ runs:
 
     - name: Aguardar 30 segundos antes de buscar o ID do scan
       shell: bash
-      if: ${{ inputs.get_scan_id == true }}
+      if: ${{ inputs.get_scan_id == true || always() }}
       run: |
         echo "Aguardando 30 segundos"
         for i in {1..3}; do
@@ -526,7 +526,7 @@ runs:
 
     - name: Obter ID(s) do(s) scan(s) (SAST e/ou SCA ou DAST)
       shell: bash
-      if: ${{ inputs.get_scan_id == true }}
+      if: ${{ inputs.get_scan_id == true || always() }}
       env:
         APP_ID: ${{ env.APP_ID }}
         API_TOKEN: ${{ inputs.api_token }}
@@ -618,7 +618,7 @@ runs:
     - name: Finalizar e validar outputs
       id: final_outputs
       shell: bash
-      if: ${{ inputs.get_scan_id == true }}
+      if: ${{ inputs.get_scan_id == true || always() }}
       run: |
         if [ ! -f "/tmp/xguardian_scan_complete" ] || [ ! -s "/tmp/xguardian_scan_complete" ]; then
           echo "::error title=XGuardian Scan::Arquivo de estado não encontrado ou vazio"
@@ -653,7 +653,7 @@ runs:
         echo "scan_url: https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
 
     - name: Salvar vulnerabilidades no banco de dados
-      if: ${{ inputs.save_vulns == 'true' }}
+      if: ${{ inputs.save_vulns == 'true' || always() }}
       shell: bash
       env:
         APP_ID: ${{ env.APP_ID }}
