@@ -1,12 +1,12 @@
 name: XGuardian Scanning
-description: "Realize análises de segurança automatizada (SAST/SCA ou DAST) direto do VSCode para plataforma XGuardian."
+description: "Realize análises de segurança (SAST/SCA ou DAST) de forma automatizada direto do Github Actions para plataforma XGuardian."
 author: "Xmart Solutions"
 
 branding:
   icon: "XGuardian.png"
   color: purple # Cor roxo900 [#2C1161] - XGuardian
   label: Security Scanning
-version: v24.12.1
+version: v24.12.3
 
 inputs:
   # Variáveis de segredo obrigatórias
@@ -234,7 +234,6 @@ runs:
         POLICY_SAST: ${{ inputs.policy_sast }}
         POLICY_SCA: ${{ inputs.policy_sca }}
         POLICY_DAST: ${{ inputs.policy_dast }}
-        POLICY_CONTAINER: ${{ inputs.policy_container }}
         MICROSERVICES: ${{ inputs.microservices }}
         MICROSERVICES_DATA: ${{ inputs.microservices_data }}
       run: |
@@ -336,6 +335,8 @@ runs:
         # Limpa o APP_NAME também para garantir consistência
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
+        # XGB-1411 | Desativando o translate temporariamente
+        # "translate": "${TRANSLATE}",
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
@@ -343,7 +344,7 @@ runs:
           "file_type": "application/zip",
           "sca": "${SCA}",
           "sast": "${SAST}",
-          "translate": "${TRANSLATE}",
+          "translate": "false", 
           "exclude": "${EXCLUDE}",
           "pdf": "${PDF}"
         }
