@@ -510,6 +510,7 @@ runs:
         fi
 
     - name: Aguardar 30 segundos antes de buscar o ID do scan
+      if: ${{ inputs.get_scan_id == true }}
       shell: bash
       run: |
         echo "Aguardando 30 segundos"
