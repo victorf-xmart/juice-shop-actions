@@ -21,12 +21,12 @@ jobs:
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
           dast: "true"
+          get_scan_id: "true"
           site_url: "http://www.bancocn.com/"
           auth_url: ""
           logout_url: ""
           user_login: ""
           password_login: ""
-          get_scan_id: "true" 
           translate: false
           pdf: false
 
