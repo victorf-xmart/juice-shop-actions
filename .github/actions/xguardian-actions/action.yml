@@ -123,6 +123,7 @@ inputs:
   get_scan_id:
     description: "Deseja buscar o ID do Scan após o upload?"
     default: false
+    type: boolean
   save_vulns:
     description: "Permitir salvar vulnerabilidades no banco de dados?"
     default: "false"
