@@ -122,7 +122,7 @@ inputs:
     default: "." # Root do projeto
   get_scan_id:
     description: "Deseja buscar o ID do Scan após o upload?"
-    default: "false"
+    default: false
   save_vulns:
     description: "Permitir salvar vulnerabilidades no banco de dados?"
     default: "false"
@@ -514,7 +514,7 @@ runs:
         fi
 
     - name: Aguardar 30 segundos antes de buscar o ID do scan
-      if: ${{ inputs.get_scan_id == "true" }}
+      if: ${{ inputs.get_scan_id == true }}
       shell: bash
       run: |
         echo "Aguardando 30 segundos"
@@ -524,7 +524,7 @@ runs:
         done
 
     - name: Obter ID(s) do(s) scan(s) (SAST e/ou SCA ou DAST)
-      if: ${{ inputs.get_scan_id == "true" }}
+      if: ${{ inputs.get_scan_id == true }}
       shell: bash
       env:
         APP_ID: ${{ env.APP_ID }}
@@ -615,7 +615,7 @@ runs:
         fi
 
     - name: Finalizar e validar outputs
-      if: ${{ inputs.get_scan_id == "true" }}
+      if: ${{ inputs.get_scan_id == true }}
       id: final_outputs
       shell: bash
       run: |
