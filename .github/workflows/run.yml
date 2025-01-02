@@ -26,7 +26,7 @@ jobs:
           logout_url: ""
           user_login: ""
           password_login: ""
-          get_scan_id: "true"
+          get_scan_id: "true" 
           translate: false
           pdf: false
 
