@@ -28,7 +28,6 @@ jobs:
           password_login: ""
           translate: false
           pdf: false
-          
           get_scan_id: true
 
 # name: Build and Security Scan
