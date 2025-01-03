@@ -13,7 +13,7 @@ jobs:
 
       # Execução do scan
       - name: XGuardian Security Scan
-        uses: ./.github/actions/xguardian-actions # xmart-xguardian/xguardian-actions@main
+        uses: xmart-xguardian/xguardian-actions@main # ./.github/actions/xguardian-actions # xmart-xguardian/xguardian-actions@main
         with:
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
@@ -27,8 +27,6 @@ jobs:
           logout_url: ""
           user_login: ""
           password_login: ""
-          translate: false
-          pdf: false
 
 # name: Build and Security Scan
 # # coment para testes workflow
