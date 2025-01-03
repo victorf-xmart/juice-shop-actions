@@ -27,6 +27,8 @@ jobs:
           logout_url: ""
           user_login: ""
           password_login: ""
+          translate: false
+          pdf: false
 
 # name: Build and Security Scan
 # # coment para testes workflow
