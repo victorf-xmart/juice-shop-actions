@@ -1,4 +1,4 @@
-name: Security Scan # DAST Test v2
+name: Security Scan # DAST Test v3
 on:
   push:
     branches:
@@ -21,7 +21,7 @@ jobs:
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: ${{ github.event.repository.name }}
           dast: "true"
-          get_scan_id: "true"
+          get_scan_id: "false"
           site_url: "http://www.bancocn.com/"
           auth_url: ""
           logout_url: ""
