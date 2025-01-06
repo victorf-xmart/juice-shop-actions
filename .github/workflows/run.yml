@@ -30,6 +30,24 @@ jobs:
           translate: false
           pdf: false
 
+      - name: List all environment variables
+        run: printenv
+
+      - name: Verify POLICY_SAST environment variable
+        run: echo "POLICY_SAST=${{ env.POLICY_SAST }}"
+
+      - name: Set POLICY_SAST output
+        id: set-policy-sast
+        run: echo "::set-output name=policy_sast::${{ env.POLICY_SAST }}"
+
+      - name: Set POLICY_SCA output
+        id: set-policy-sca
+        run: echo "::set-output name=policy_sca::${{ env.POLICY_SCA }}"
+
+      - name: Set POLICY_DAST output
+        id: set-policy-dast
+        run: echo "::set-output name=policy_dast::${{ env.POLICY_DAST }}"
+
 # name: Build and Security Scan
 # # coment para testes workflow
 
