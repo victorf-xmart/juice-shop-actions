@@ -6,6 +6,7 @@ on:
 
 jobs:
   security-scan:
+    # https://github.com/actions/runner-images/issues/10636  
     runs-on: ubuntu-latest
     steps:
       # Checkout do código fonte
