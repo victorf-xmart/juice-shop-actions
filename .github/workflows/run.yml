@@ -1,4 +1,4 @@
-name: Security Scan # DAST Test
+name: Security Scan # DAST Test v2
 on:
   push:
     branches:
