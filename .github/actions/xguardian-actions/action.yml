@@ -280,6 +280,26 @@ runs:
         if [ "$APP_ID" != "null" ] && [ ! -z "$APP_ID" ]; then
           echo "Aplicação criada com sucesso. APP_ID: $APP_ID"
           echo "APP_ID=$APP_ID" >> $GITHUB_ENV
+
+          # Extrair e adicionar policies_id ao GITHUB_ENV
+          POLICY_SAST=$(echo "$RESPONSE" | jq -r '.policies_id_sast')
+          POLICY_SCA=$(echo "$RESPONSE" | jq -r '.policies_id_sca')
+          POLICY_DAST=$(echo "$RESPONSE" | jq -r '.policies_id_dast')
+
+          if [ -n "$POLICY_SAST" ]; then
+            echo "POLICY_SAST encontrado: $POLICY_SAST"
+            echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
+          fi
+
+          if [ -n "$POLICY_SCA" ]; then
+            echo "POLICY_SCA encontrado: $POLICY_SCA"
+            echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
+          fi
+
+          if [ -n "$POLICY_DAST" ]; then
+            echo "POLICY_DAST encontrado: $POLICY_DAST"
+            echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
+          fi
         else
           # Verificar se é erro 400 (app já existe)
           ERROR_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
@@ -302,9 +322,9 @@ runs:
               echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
               # Extrair e adicionar policies_id ao GITHUB_ENV
-              POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policy_sast')
-              POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policy_sca')
-              POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policy_dast')
+              POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sast')
+              POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sca')
+              POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_dast')
 
               if [ -n "$POLICY_SAST" ]; then
                 echo "POLICY_SAST encontrado: $POLICY_SAST"
@@ -332,9 +352,6 @@ runs:
             exit 1
           fi
         fi
-
-    # - name: Verificar as políticas
-    #   run: |
 
     - name: Obter o short_sha
       id: vars
