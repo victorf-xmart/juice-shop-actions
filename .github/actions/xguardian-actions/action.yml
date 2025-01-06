@@ -143,7 +143,7 @@ outputs:
     description: "URL para visualizar os resultados do scan"
     value: ${{ steps.final_outputs.outputs.scan_url }}
   scan_version:
-    description: "Versão do scan (baseada no nome do repositório e SHA do commit)"
+    description: "Versão do scan (baseada no app_name + SHA do commit)"
     value: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
 
 runs:
