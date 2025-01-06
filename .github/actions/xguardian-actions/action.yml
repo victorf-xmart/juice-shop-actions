@@ -300,6 +300,26 @@ runs:
               echo "Detalhes da aplicação:"
               echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.[] | select(.name == $NAME)'
               echo "APP_ID=$APP_ID" >> $GITHUB_ENV
+
+              # Extrair e adicionar policies_id ao GITHUB_ENV
+              POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policy_sast')
+              POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policy_sca')
+              POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policy_dast')
+
+              if [ -n "$POLICY_SAST" ]; then
+                echo "POLICY_SAST encontrado: $POLICY_SAST"
+                echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
+              fi
+
+              if [ -n "$POLICY_SCA" ]; then
+                echo "POLICY_SCA encontrado: $POLICY_SCA"
+                echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
+              fi
+
+              if [ -n "$POLICY_DAST" ]; then
+                echo "POLICY_DAST encontrado: $POLICY_DAST"
+                echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
+              fi
             else
               echo "Aviso: Não foi possível encontrar o APP_ID da aplicação existente"
               echo "Response completo:"
@@ -312,6 +332,9 @@ runs:
             exit 1
           fi
         fi
+
+    # - name: Verificar as políticas
+    #   run: |
 
     - name: Obter o short_sha
       id: vars
