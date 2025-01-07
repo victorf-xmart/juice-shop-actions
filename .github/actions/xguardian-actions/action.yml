@@ -466,9 +466,9 @@ runs:
       env:
         API_TOKEN: ${{ inputs.api_token }}
         APP_ID: ${{ env.APP_ID }}
-        SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
       run: |
         SCAN_STATUS=""
+        SCAN_VERSION="${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}"
 
         # Função para verificar o status do scan
         check_scan_status() {
