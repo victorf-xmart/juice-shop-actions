@@ -406,10 +406,21 @@ runs:
             -H "Authorization: Bearer ${API_TOKEN}")
 
           local policies=$(echo "$response" | jq -r '.[] | select(.name != "Default" and .description != "Default")')
+          local default_policy_id=$(echo "$response" | jq -r '.[] | select(.name == "Default" and .description == "Default") | .id')
 
           if [ -n "$policies" ]; then
-            echo "::error::Existem políticas definidas que não são default para ${scan_type}. Verifique as políticas antes de continuar."
-            exit 1
+            echo "Políticas encontradas para ${scan_type}:"
+            echo "$policies"
+            
+            # Verificar se a política definida na aplicação é "Default"
+            local app_policy_id=$(curl -s -X GET "https://auth.xguardianplatform.io/get_app_policy_id?scan_type=${scan_type}" \
+              -H 'accept: application/json' \
+              -H "Authorization: Bearer ${API_TOKEN}" | jq -r '.policy_id')
+
+            if [ "$app_policy_id" != "$default_policy_id" ]; then
+              echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
+              exit 1
+            fi
           fi
         }
 
