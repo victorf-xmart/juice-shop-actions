@@ -398,9 +398,9 @@ runs:
       shell: bash
       env:
         API_TOKEN: ${{ inputs.api_token }}
-        POLICY_SAST: ${{ env.POLICY_SAST }}
-        POLICY_SCA: ${{ env.POLICY_SCA }}
-        POLICY_DAST: ${{ env.POLICY_DAST }}
+        POLICY_SAST: "${{ env.POLICY_SAST }}"
+        POLICY_SCA: "${{ env.POLICY_SCA }}"
+        POLICY_DAST: "${{ env.POLICY_DAST }}"
       run: |
         check_policies() {
           local scan_type=$1
