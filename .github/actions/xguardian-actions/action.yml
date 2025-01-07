@@ -418,12 +418,12 @@ runs:
             exit 1
           fi
 
-          local policies=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase != "default" and .description | ascii_downcase != "default")')
+          local policies=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase != "default" and .description | ascii_downcase != "default") | @base64')
           local default_policy_id=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase == "default" and .description | ascii_downcase == "default") | .id')
 
           if [ -n "$policies" ]; then
             echo "Políticas encontradas para ${scan_type}:"
-            echo "$policies"
+            echo "$policies" | base64 --decode | jq '.'
             
             if [ "$app_policy_id" != "$default_policy_id" ]; then
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
