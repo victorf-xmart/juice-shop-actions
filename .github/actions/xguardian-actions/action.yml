@@ -228,22 +228,6 @@ runs:
           echo "Token is valid."
         fi
 
-    - name: Verificar políticas definidas
-      shell: bash
-      env:
-        API_TOKEN: ${{ inputs.api_token }}
-      run: |
-        response=$(curl -s -X GET 'https://auth.xguardianplatform.io/get_policies' \
-          -H 'accept: application/json' \
-          -H "Authorization: Bearer ${API_TOKEN}")
-
-        policies=$(echo "$response" | jq -r '.[] | select(.name != "Default" and .description != "Default")')
-
-        if [ -n "$policies" ]; then
-          echo "::error::Existem políticas definidas que não são default. Verifique as políticas antes de continuar."
-          exit 1
-        fi
-
     - name: Instalar dependências
       shell: bash
       env:
@@ -409,6 +393,29 @@ runs:
             exit 1
           fi
         fi
+
+    - name: Verificar políticas definidas
+      shell: bash
+      env:
+        API_TOKEN: ${{ inputs.api_token }}
+      run: |
+        check_policies() {
+          local scan_type=$1
+          local response=$(curl -s -X GET "https://auth.xguardianplatform.io/get_policies_${scan_type}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}")
+
+          local policies=$(echo "$response" | jq -r '.[] | select(.name != "Default" and .description != "Default")')
+
+          if [ -n "$policies" ]; then
+            echo "::error::Existem políticas definidas que não são default para ${scan_type}. Verifique as políticas antes de continuar."
+            exit 1
+          fi
+        }
+
+        check_policies "sast"
+        check_policies "sca"
+        check_policies "dast"
 
     - name: Obter o short_sha
       id: vars
