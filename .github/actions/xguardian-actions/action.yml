@@ -409,6 +409,12 @@ runs:
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
+          # Verifica se a resposta é um JSON válido
+          if ! echo "$response" | jq . > /dev/null 2>&1; then
+            echo "::error::Resposta da API não é um JSON válido: $response"
+            exit 1
+          fi
+
           local policies=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase != "default" and .description | ascii_downcase != "default")')
           local default_policy_id=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase == "default" and .description | ascii_downcase == "default") | .id')
 
