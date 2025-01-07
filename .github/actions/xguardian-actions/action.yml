@@ -408,9 +408,9 @@ runs:
           local response=$(curl -s -X GET "https://auth.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
-          
+
           echo "Debug: Resposta da API para ${scan_type}:"
-            echo "$response" | jq '.'
+          echo "$response" | jq '.'
 
           # Verifica se a resposta é um JSON válido
           if ! echo "$response" | jq . > /dev/null 2>&1; then
@@ -428,7 +428,11 @@ runs:
             if [ "$app_policy_id" != "$default_policy_id" ]; then
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
               exit 1
+            else
+              echo "A política aplicada na aplicação para ${scan_type} é a 'Default'. Continuando com o scan."
             fi
+          else
+            echo "Nenhuma política encontrada para ${scan_type}."
           fi
         }
 
