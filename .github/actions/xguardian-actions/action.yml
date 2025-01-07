@@ -410,21 +410,29 @@ runs:
             -H "Authorization: Bearer ${API_TOKEN}")
 
           echo "Debug: Resposta da API para ${scan_type}:"
-          echo "$response" | jq '.'
-
-          # Verifica se a resposta é um JSON válido
-          if ! echo "$response" | jq . > /dev/null 2>&1; then
+          echo "$response" | jq '.' || {
             echo "::error::Resposta da API não é um JSON válido: $response"
             exit 1
-          fi
+          }
 
-          local policies=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase != "default" and .description | ascii_downcase != "default") | @base64')
-          local default_policy_id=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase == "default" and .description | ascii_downcase == "default") | .id')
+          # Filtra políticas que não sejam "default"
+          local policies=$(echo "$response" | jq -r '
+            .[] | select(.name and .description) | 
+            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
+            @base64')
+
+          # Obtém ID da política "default"
+          local default_policy_id=$(echo "$response" | jq -r '
+            .[] | select(.name and .description) | 
+            select((.name | ascii_downcase) == "default" and (.description | ascii_downcase) == "default") | 
+            .id')
 
           if [ -n "$policies" ]; then
             echo "Políticas encontradas para ${scan_type}:"
-            echo "$policies" | base64 --decode | jq '.'
-            
+            echo "$policies" | while read -r policy; do
+              echo "$policy" | base64 --decode | jq '.'
+            done
+
             if [ "$app_policy_id" != "$default_policy_id" ]; then
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
               exit 1
