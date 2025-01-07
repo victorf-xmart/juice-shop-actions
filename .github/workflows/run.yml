@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  security-scan:
+  quality-gate:
     # https://github.com/actions/runner-images/issues/10636  
     runs-on: ubuntu-latest
     steps:
