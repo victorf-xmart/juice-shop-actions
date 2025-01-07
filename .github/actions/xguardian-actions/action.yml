@@ -398,9 +398,13 @@ runs:
       shell: bash
       env:
         API_TOKEN: ${{ inputs.api_token }}
+        POLICY_SAST: ${{ env.POLICY_SAST }}
+        POLICY_SCA: ${{ env.POLICY_SCA }}
+        POLICY_DAST: ${{ env.POLICY_DAST }}
       run: |
         check_policies() {
           local scan_type=$1
+          local app_policy_id=$2
           local response=$(curl -s -X GET "https://auth.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
@@ -412,11 +416,6 @@ runs:
             echo "Políticas encontradas para ${scan_type}:"
             echo "$policies"
             
-            # Verificar se a política definida na aplicação é "Default"
-            local app_policy_id=$(curl -s -X GET "https://auth.xguardianplatform.io/get_app_policy_id?scan_type=${scan_type}" \
-              -H 'accept: application/json' \
-              -H "Authorization: Bearer ${API_TOKEN}" | jq -r '.policy_id')
-
             if [ "$app_policy_id" != "$default_policy_id" ]; then
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
               exit 1
@@ -424,9 +423,9 @@ runs:
           fi
         }
 
-        check_policies "sast"
-        check_policies "sca"
-        check_policies "dast"
+        check_policies "sast" "${POLICY_SAST}"
+        check_policies "sca" "${POLICY_SCA}"
+        check_policies "dast" "${POLICY_DAST}"
 
     - name: Obter o short_sha
       id: vars
