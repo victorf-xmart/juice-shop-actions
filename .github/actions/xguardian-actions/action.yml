@@ -156,6 +156,8 @@ runs:
         API_PASSWORD: ${{ inputs.api_password }}
         API_TOKEN: ${{ inputs.api_token }}
       run: |
+        set -e
+
         # Função para obter um novo token
         renew_token() {
           response=$(curl -s -X POST 'https://auth.xguardianplatform.io/login' \
@@ -178,6 +180,8 @@ runs:
         test_response=$(curl -s -X GET 'https://some-endpoint-to-test-token' \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
+
+        echo "Test response: $test_response"
 
         if echo "$test_response" | grep -q '"detail": "Token is invalid, Signature has expired."'; then
           echo "Token has expired, renewing token..."
