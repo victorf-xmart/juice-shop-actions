@@ -808,7 +808,7 @@ runs:
             if [ "$SCAN_STATUS" == "FINISHED" ]; then
               echo "Scan finalizado com sucesso."
               break
-            elif [ "$SCAN_STATUS" == "IN_PROGRESS" ]; then
+            elif [ "$SCAN_STATUS" == "RUNNING" ]; then
               echo "Scan ainda em andamento. Aguardando 2 minutos..."
               sleep 120
             else
