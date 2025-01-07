@@ -442,6 +442,9 @@ runs:
             # Verifica se a política definida na aplicação é diferente da "default"
             if [ "$app_policy_id" != "$default_policy_id" ]; then
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
+              # Exibe a política atribuída e suas configurações
+              echo "Política atribuída para ${scan_type}:"
+              echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == $id)'
               exit 1
             else
               echo "A política aplicada na aplicação para ${scan_type} é a 'Default'. Continuando com o scan."
