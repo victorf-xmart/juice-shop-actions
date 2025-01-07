@@ -149,6 +149,43 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Validar e renovar token se necessário
+    shell: bash
+    env:
+      API_EMAIL: ${{ inputs.api_email }}
+      API_PASSWORD: ${{ inputs.api_password }}
+      API_TOKEN: ${{ inputs.api_token }}
+    run: |
+      # Função para obter um novo token
+      renew_token() {
+        response=$(curl -s -X POST 'https://auth.xguardianplatform.io/login' \
+          -H 'accept: application/json' \
+          -H 'Content-Type: application/json' \
+          -d '{"email": "'${API_EMAIL}'", "password": "'${API_PASSWORD}'"}' | jq -r '.token')
+          
+        if [[ -n "$response" && "$response" != "null" ]]; then
+          echo "New token obtained successfully."
+          echo "$response" | gh secret set API_TOKEN
+          echo "API_TOKEN=$response" >> $GITHUB_ENV
+          API_TOKEN=$response
+        else
+          echo "Failed to obtain a new token."
+          exit 1
+        fi
+      }
+
+      # Testar validade do token atual
+      test_response=$(curl -s -X GET 'https://some-endpoint-to-test-token' \
+        -H 'accept: application/json' \
+        -H "Authorization: Bearer ${API_TOKEN}")
+
+      if echo "$test_response" | grep -q '"detail": "Token is invalid, Signature has expired."'; then
+        echo "Token has expired, renewing token..."
+        renew_token
+      else
+        echo "Token is valid."
+      fi
+
     - name: Validando inputs sensíveis
       shell: bash
       env:
