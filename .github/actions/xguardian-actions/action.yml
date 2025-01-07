@@ -405,8 +405,8 @@ runs:
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
-          local policies=$(echo "$response" | jq -r '.[] | select(.name != "Default" and .description != "Default")')
-          local default_policy_id=$(echo "$response" | jq -r '.[] | select(.name == "Default" and .description == "Default") | .id')
+          local policies=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase != "default" and .description | ascii_downcase != "default")')
+          local default_policy_id=$(echo "$response" | jq -r '.[] | select(.name | ascii_downcase == "default" and .description | ascii_downcase == "default") | .id')
 
           if [ -n "$policies" ]; then
             echo "Políticas encontradas para ${scan_type}:"
