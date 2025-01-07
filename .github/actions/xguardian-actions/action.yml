@@ -408,6 +408,9 @@ runs:
           local response=$(curl -s -X GET "https://auth.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
+          
+          echo "Debug: Resposta da API para ${scan_type}:"
+            echo "$response" | jq '.'
 
           # Verifica se a resposta é um JSON válido
           if ! echo "$response" | jq . > /dev/null 2>&1; then
