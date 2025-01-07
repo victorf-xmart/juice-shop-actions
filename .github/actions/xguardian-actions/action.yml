@@ -177,7 +177,7 @@ runs:
         }
 
         # Testar validade do token atual
-        test_response=$(curl -s -X GET 'https://some-endpoint-to-test-token' \
+        test_response=$(curl -s -X GET 'https://auth.xguardianplatform.io/ping' \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
 
