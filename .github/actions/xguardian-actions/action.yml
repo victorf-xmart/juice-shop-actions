@@ -398,41 +398,48 @@ runs:
       shell: bash
       env:
         API_TOKEN: ${{ inputs.api_token }}
-        POLICY_SAST: "${{ env.POLICY_SAST }}"
-        POLICY_SCA: "${{ env.POLICY_SCA }}"
-        POLICY_DAST: "${{ env.POLICY_DAST }}"
+        POLICY_SAST: "${{ env.POLICY_SAST }}" # ID da política SAST definida na aplicação
+        POLICY_SCA: "${{ env.POLICY_SCA }}" # ID da política SCA definida na aplicação
+        POLICY_DAST: "${{ env.POLICY_DAST }}" # ID da política DAST definida na aplicação
       run: |
+        # Função para verificar as políticas definidas
         check_policies() {
-          local scan_type=$1
-          local app_policy_id=$2
+          local scan_type=$1          # Tipo de scan (sast, sca ou dast)
+          local app_policy_id=$2      # ID da política definida na aplicação para o tipo de scan
+
+          # Faz a requisição à API para obter as políticas configuradas
           local response=$(curl -s -X GET "https://auth.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
+          # Exibe a resposta para debug
           echo "Debug: Resposta da API para ${scan_type}:"
           echo "$response" | jq '.' || {
+            # Se a resposta não for JSON válido, exibe erro e finaliza
             echo "::error::Resposta da API não é um JSON válido: $response"
             exit 1
           }
 
-          # Filtra políticas que não sejam "default"
+          # Filtra todas as políticas que têm nome e descrição, exceto "default"
           local policies=$(echo "$response" | jq -r '
             .[] | select(.name and .description) | 
             select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
             @base64')
 
-          # Obtém ID da política "default"
+          # Obtém o ID da política "default", que será usada para validação
           local default_policy_id=$(echo "$response" | jq -r '
             .[] | select(.name and .description) | 
             select((.name | ascii_downcase) == "default" and (.description | ascii_downcase) == "default") | 
             .id')
 
+          # Se houver políticas encontradas (além de "default"), exibe-as
           if [ -n "$policies" ]; then
             echo "Políticas encontradas para ${scan_type}:"
             echo "$policies" | while read -r policy; do
               echo "$policy" | base64 --decode | jq '.'
             done
 
+            # Verifica se a política definida na aplicação é diferente da "default"
             if [ "$app_policy_id" != "$default_policy_id" ]; then
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
               exit 1
@@ -440,13 +447,15 @@ runs:
               echo "A política aplicada na aplicação para ${scan_type} é a 'Default'. Continuando com o scan."
             fi
           else
+            # Se não houver políticas encontradas, exibe um aviso
             echo "Nenhuma política encontrada para ${scan_type}."
           fi
         }
 
-        check_policies "sast" "${POLICY_SAST}"
-        check_policies "sca" "${POLICY_SCA}"
-        check_policies "dast" "${POLICY_DAST}"
+        # Chama a função para verificar as políticas para cada tipo de scan
+        check_policies "sast" "${POLICY_SAST}"  # Verifica políticas SAST
+        check_policies "sca" "${POLICY_SCA}"   # Verifica políticas SCA
+        check_policies "dast" "${POLICY_DAST}" # Verifica políticas DAST
 
     - name: Obter o short_sha
       id: vars
