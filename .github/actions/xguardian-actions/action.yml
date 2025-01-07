@@ -1,4 +1,4 @@
-name: XGuardian Scanning
+name: XGuardian Scanning # testando com politica SAST não definida; SCA sim; DAST sim;
 description: "Realize análises de segurança (SAST/SCA ou DAST) de forma automatizada direto do Github Actions para plataforma XGuardian."
 author: "Xmart Solutions"
 
@@ -443,7 +443,7 @@ runs:
             if [ "$app_policy_id" != "$default_policy_id" ]; then
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
               # Exibe a política atribuída e suas configurações
-              echo "Política atribuída para ${scan_type}:"
+              echo "Política atribuída para ${scan_type}: $app_policy_id"
               echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == $id)'
               exit 1
             else
