@@ -205,7 +205,6 @@ runs:
             
           if [[ -n "$response" && "$response" != "null" ]]; then
             echo "New token obtained successfully."
-            echo "$response" | gh secret set API_TOKEN
             echo "API_TOKEN=$response" >> $GITHUB_ENV
             API_TOKEN=$response
           else
@@ -394,10 +393,10 @@ runs:
           fi
         fi
 
-    - name: Verificar políticas definidas
+   - name: Verificar políticas definidas
       shell: bash
       env:
-        API_TOKEN: ${{ inputs.api_token }}
+        API_TOKEN: ${{ env.API_TOKEN }}
         POLICY_SAST: "${{ env.POLICY_SAST }}" # ID da política SAST definida na aplicação
         POLICY_SCA: "${{ env.POLICY_SCA }}" # ID da política SCA definida na aplicação
         POLICY_DAST: "${{ env.POLICY_DAST }}" # ID da política DAST definida na aplicação
