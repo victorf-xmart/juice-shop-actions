@@ -905,20 +905,36 @@ runs:
         compare_vulnerabilities() {
           local scan_data=$1
 
-          local sast_critical=$(echo "$scan_data" | jq -r '.sast_critical')
-          local sast_high=$(echo "$scan_data" | jq -r '.sast_high')
-          local sast_medium=$(echo "$scan_data" | jq -r '.sast_medium')
-          local sast_low=$(echo "$scan_data" | jq -r '.sast_low')
+          local sast_critical=$(echo "$scan_data" | jq -r '.sast_critical // 0')
+          local sast_high=$(echo "$scan_data" | jq -r '.sast_high // 0')
+          local sast_medium=$(echo "$scan_data" | jq -r '.sast_medium // 0')
+          local sast_low=$(echo "$scan_data" | jq -r '.sast_low // 0')
 
-          local sca_critical=$(echo "$scan_data" | jq -r '.sca_critical')
-          local sca_high=$(echo "$scan_data" | jq -r '.sca_high')
-          local sca_medium=$(echo "$scan_data" | jq -r '.sca_medium')
-          local sca_low=$(echo "$scan_data" | jq -r '.sca_low')
+          local sca_critical=$(echo "$scan_data" | jq -r '.sca_critical // 0')
+          local sca_high=$(echo "$scan_data" | jq -r '.sca_high // 0')
+          local sca_medium=$(echo "$scan_data" | jq -r '.sca_medium // 0')
+          local sca_low=$(echo "$scan_data" | jq -r '.sca_low // 0')
 
-          local dast_critical=$(echo "$scan_data" | jq -r '.dast_critical')
-          local dast_high=$(echo "$scan_data" | jq -r '.dast_high')
-          local dast_medium=$(echo "$scan_data" | jq -r '.dast_medium')
-          local dast_low=$(echo "$scan_data" | jq -r '.dast_low')
+          local dast_critical=$(echo "$scan_data" | jq -r '.dast_critical // 0')
+          local dast_high=$(echo "$scan_data" | jq -r '.dast_high // 0')
+          local dast_medium=$(echo "$scan_data" | jq -r '.dast_medium // 0')
+          local dast_low=$(echo "$scan_data" | jq -r '.dast_low // 0')
+
+          # Verifica se as variáveis de ambiente estão definidas, caso contrário, define como 0
+          SAST_CRITICAL=${SAST_CRITICAL:-0}
+          SAST_HIGH=${SAST_HIGH:-0}
+          SAST_MEDIUM=${SAST_MEDIUM:-0}
+          SAST_LOW=${SAST_LOW:-0}
+
+          SCA_CRITICAL=${SCA_CRITICAL:-0}
+          SCA_HIGH=${SCA_HIGH:-0}
+          SCA_MEDIUM=${SCA_MEDIUM:-0}
+          SCA_LOW=${SCA_LOW:-0}
+
+          DAST_CRITICAL=${DAST_CRITICAL:-0}
+          DAST_HIGH=${DAST_HIGH:-0}
+          DAST_MEDIUM=${DAST_MEDIUM:-0}
+          DAST_LOW=${DAST_LOW:-0}
 
           # Comparar SAST
           if [ "$sast_critical" -gt "$SAST_CRITICAL" ] || [ "$sast_high" -gt "$SAST_HIGH" ] || [ "$sast_medium" -gt "$SAST_MEDIUM" ] || [ "$sast_low" -gt "$SAST_LOW" ]; then
