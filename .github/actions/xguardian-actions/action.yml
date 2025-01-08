@@ -443,6 +443,12 @@ runs:
             local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == $id)')
             echo "$policy" | jq '.'
 
+            # Verifica se a política atribuída foi encontrada
+            if [ -z "$policy" ]; then
+              echo "::error::Política atribuída para ${scan_type} não encontrada: $app_policy_id"
+              exit 1
+            fi
+
             # Exporta as configurações da política como variáveis de ambiente
             export CRITICAL=$(echo "$policy" | jq -r '.critical')
             export HIGH=$(echo "$policy" | jq -r '.high')
