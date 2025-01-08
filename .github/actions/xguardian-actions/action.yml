@@ -450,12 +450,19 @@ runs:
             export LOW=$(echo "$policy" | jq -r '.low')
             export RATING=$(echo "$policy" | jq -r '.rating')
 
+            # Define as variáveis de ambiente específicas para cada tipo de scan
+            echo "${scan_type^^}_CRITICAL=$CRITICAL" >> $GITHUB_ENV
+            echo "${scan_type^^}_HIGH=$HIGH" >> $GITHUB_ENV
+            echo "${scan_type^^}_MEDIUM=$MEDIUM" >> $GITHUB_ENV
+            echo "${scan_type^^}_LOW=$LOW" >> $GITHUB_ENV
+            echo "${scan_type^^}_RATING=$RATING" >> $GITHUB_ENV
+
             echo "Configurações da política exportadas como variáveis de ambiente:"
-            echo "CRITICAL=$CRITICAL"
-            echo "HIGH=$HIGH"
-            echo "MEDIUM=$MEDIUM"
-            echo "LOW=$LOW"
-            echo "RATING=$RATING"
+            echo "${scan_type^^}_CRITICAL=$CRITICAL"
+            echo "${scan_type^^}_HIGH=$HIGH"
+            echo "${scan_type^^}_MEDIUM=$MEDIUM"
+            echo "${scan_type^^}_LOW=$LOW"
+            echo "${scan_type^^}_RATING=$RATING"
           else
             # Se não houver políticas encontradas, exibe um aviso
             echo "Nenhuma política encontrada para ${scan_type}."
