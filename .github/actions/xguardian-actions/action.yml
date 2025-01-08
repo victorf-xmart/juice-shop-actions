@@ -939,18 +939,24 @@ runs:
           # Comparar SAST
           if [ "$sast_critical" -gt "$SAST_CRITICAL" ] || [ "$sast_high" -gt "$SAST_HIGH" ] || [ "$sast_medium" -gt "$SAST_MEDIUM" ] || [ "$sast_low" -gt "$SAST_LOW" ]; then
             echo "::error::Vulnerabilidades SAST excedem as políticas definidas."
+            echo "Políticas definidas para SAST: CRITICAL=$SAST_CRITICAL, HIGH=$SAST_HIGH, MEDIUM=$SAST_MEDIUM, LOW=$SAST_LOW"
+            echo "Vulnerabilidades encontradas para SAST: CRITICAL=$sast_critical, HIGH=$sast_high, MEDIUM=$sast_medium, LOW=$sast_low"
             exit 1
           fi
 
           # Comparar SCA
           if [ "$sca_critical" -gt "$SCA_CRITICAL" ] || [ "$sca_high" -gt "$SCA_HIGH" ] || [ "$sca_medium" -gt "$SCA_MEDIUM" ] || [ "$sca_low" -gt "$SCA_LOW" ]; then
             echo "::error::Vulnerabilidades SCA excedem as políticas definidas."
+            echo "Políticas definidas para SCA: CRITICAL=$SCA_CRITICAL, HIGH=$SCA_HIGH, MEDIUM=$SCA_MEDIUM, LOW=$SCA_LOW"
+            echo "Vulnerabilidades encontradas para SCA: CRITICAL=$sca_critical, HIGH=$sca_high, MEDIUM=$sca_medium, LOW=$sca_low"
             exit 1
           fi
 
           # Comparar DAST
           if [ "$dast_critical" -gt "$DAST_CRITICAL" ] || [ "$dast_high" -gt "$DAST_HIGH" ] || [ "$dast_medium" -gt "$DAST_MEDIUM" ] || [ "$dast_low" -gt "$DAST_LOW" ]; then
             echo "::error::Vulnerabilidades DAST excedem as políticas definidas."
+            echo "Políticas definidas para DAST: CRITICAL=$DAST_CRITICAL, HIGH=$DAST_HIGH, MEDIUM=$DAST_MEDIUM, LOW=$DAST_LOW"
+            echo "Vulnerabilidades encontradas para DAST: CRITICAL=$dast_critical, HIGH=$dast_high, MEDIUM=$dast_medium, LOW=$dast_low"
             exit 1
           fi
 
