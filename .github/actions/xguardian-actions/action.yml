@@ -445,8 +445,22 @@ runs:
               echo "::error::A política definida na aplicação para ${scan_type} não é 'Default'. Verifique as políticas antes de continuar."
               # Exibe a política atribuída e suas configurações
               echo "Política atribuída para ${scan_type}: $app_policy_id"
-              echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == $id)'
-              exit 1
+              local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == $id)')
+              echo "$policy" | jq '.'
+
+              # Exporta as configurações da política como variáveis de ambiente
+              export CRITICAL=$(echo "$policy" | jq -r '.critical')
+              export HIGH=$(echo "$policy" | jq -r '.high')
+              export MEDIUM=$(echo "$policy" | jq -r '.medium')
+              export LOW=$(echo "$policy" | jq -r '.low')
+              export RATING=$(echo "$policy" | jq -r '.rating')
+
+              echo "Configurações da política exportadas como variáveis de ambiente:"
+              echo "CRITICAL=$CRITICAL"
+              echo "HIGH=$HIGH"
+              echo "MEDIUM=$MEDIUM"
+              echo "LOW=$LOW"
+              echo "RATING=$RATING"
             else
               echo "A política aplicada na aplicação para ${scan_type} é a 'Default'. Continuando com o scan."
             fi
