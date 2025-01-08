@@ -393,7 +393,7 @@ runs:
           fi
         fi
 
-   - name: Verificar políticas definidas
+    - name: Verificar políticas definidas
       shell: bash
       env:
         API_TOKEN: ${{ env.API_TOKEN }}
