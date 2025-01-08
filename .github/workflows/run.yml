@@ -1,4 +1,4 @@
-name: Security Scan ## Test com um quality gate de 50 vulns para DAST
+name: Security Scan ## Test com um quality gate de 50 vulns (todas as severidades) para DAST
 on:
   push:
     branches:
