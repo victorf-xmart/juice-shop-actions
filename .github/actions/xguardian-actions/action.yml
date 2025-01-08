@@ -960,7 +960,7 @@ runs:
             exit 1
           fi
 
-          echo "Todas as vulnerabilidades estão dentro das políticas definidas."
+          echo "::notice::Todas as vulnerabilidades estão dentro das políticas definidas."
         }
 
         # Chama a função para buscar vulnerabilidades e comparar com políticas
