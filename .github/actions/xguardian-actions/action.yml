@@ -440,7 +440,7 @@ runs:
 
             # Exibe a política atribuída e suas configurações
             echo "Política atribuída para ${scan_type}: $app_policy_id"
-            local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == $id)')
+            local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == ($id | tonumber))')
             echo "$policy" | jq '.'
 
             # Verifica se a política atribuída foi encontrada
