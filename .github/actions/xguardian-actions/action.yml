@@ -456,6 +456,12 @@ runs:
             export LOW=$(echo "$policy" | jq -r '.low')
             export RATING=$(echo "$policy" | jq -r '.rating')
 
+            # Verifica se as variáveis foram corretamente atribuídas
+            if [ -z "$CRITICAL" ] || [ -z "$HIGH" ] || [ -z "$MEDIUM" ] || [ -z "$LOW" ] || [ -z "$RATING" ]; then
+              echo "::error::Falha ao atribuir variáveis de ambiente para ${scan_type}"
+              exit 1
+            fi
+
             # Define as variáveis de ambiente específicas para cada tipo de scan
             echo "${scan_type^^}_CRITICAL=$CRITICAL" >> $GITHUB_ENV
             echo "${scan_type^^}_HIGH=$HIGH" >> $GITHUB_ENV
