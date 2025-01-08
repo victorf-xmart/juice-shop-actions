@@ -395,7 +395,6 @@ runs:
         fi
 
     - name: Verificar políticas definidas
-      if: false # Desativa temporariamente este step
       shell: bash
       env:
         API_TOKEN: ${{ inputs.api_token }}
