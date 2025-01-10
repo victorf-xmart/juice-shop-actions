@@ -455,9 +455,10 @@ runs:
             export MEDIUM=$(echo "$policy" | jq -r '.medium')
             export LOW=$(echo "$policy" | jq -r '.low')
             export RATING=$(echo "$policy" | jq -r '.rating')
+            export PIPEACTION=$(echo "$policy" | jq -r '.pipeaction')
 
             # Verifica se as variáveis foram corretamente atribuídas
-            if [ -z "$CRITICAL" ] || [ -z "$HIGH" ] || [ -z "$MEDIUM" ] || [ -z "$LOW" ] || [ -z "$RATING" ]; then
+            if [ -z "$CRITICAL" ] || [ -z "$HIGH" ] || [ -z "$MEDIUM" ] || [ -z "$LOW" ] || [ -z "$RATING" ] || [ -z "$PIPEACTION" ]; then
               echo "::error::Falha ao atribuir variáveis de ambiente para ${scan_type}"
               exit 1
             fi
@@ -468,6 +469,7 @@ runs:
             echo "${scan_type^^}_MEDIUM=$MEDIUM" >> $GITHUB_ENV
             echo "${scan_type^^}_LOW=$LOW" >> $GITHUB_ENV
             echo "${scan_type^^}_RATING=$RATING" >> $GITHUB_ENV
+            echo "${scan_type^^}_PIPEACTION=$PIPEACTION" >> $GITHUB_ENV
 
             echo "Configurações da política exportadas como variáveis de ambiente:"
             echo "${scan_type^^}_CRITICAL=$CRITICAL"
@@ -475,6 +477,7 @@ runs:
             echo "${scan_type^^}_MEDIUM=$MEDIUM"
             echo "${scan_type^^}_LOW=$LOW"
             echo "${scan_type^^}_RATING=$RATING"
+            echo "${scan_type^^}_PIPEACTION=$PIPEACTION"
           else
             # Se não houver políticas encontradas, exibe um aviso
             echo "Nenhuma política encontrada para ${scan_type}."
