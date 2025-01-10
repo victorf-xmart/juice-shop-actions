@@ -1,4 +1,4 @@
-name: XGuardian Scanning # testando com politica SAST não definida; SCA sim; DAST sim;
+name: XGuardian Scanning ## testando as politicas
 description: "Realize análises de segurança (SAST/SCA ou DAST) de forma automatizada direto do Github Actions para plataforma XGuardian."
 author: "Xmart Solutions"
 
