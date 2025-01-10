@@ -119,6 +119,11 @@ inputs:
     description: "O relatório será gerado em PDF detalhado?"
     default: '"false"'
     type: string
+  pipeaction:
+    description: "Ação na pipeline em caso de vulnerabilidades (warn, fail, noAction)."
+    default: "noAction"
+    required: false
+    type: string
 
   # Configurações opcionais (caso o usuário deseje)
   scan_directory:
@@ -438,6 +443,7 @@ runs:
         POLICY_SAST: "${{ env.POLICY_SAST }}" # ID da política SAST definida na aplicação
         POLICY_SCA: "${{ env.POLICY_SCA }}" # ID da política SCA definida na aplicação
         POLICY_DAST: "${{ env.POLICY_DAST }}" # ID da política DAST definida na aplicação
+        PIPEACTION: ${{ inputs.pipeaction }} # Ação na pipeline
       run: |
         # Função para verificar as políticas definidas
         check_policies() {
@@ -913,6 +919,7 @@ runs:
         DAST_MEDIUM: ${{ env.DAST_MEDIUM }}
         DAST_LOW: ${{ env.DAST_LOW }}
         DAST_RATING: ${{ env.DAST_RATING }}
+        PIPEACTION: ${{ inputs.pipeaction }}
       run: |
         # Função para buscar vulnerabilidades do scan
         fetch_vulnerabilities() {
@@ -982,7 +989,11 @@ runs:
             echo "::error::Vulnerabilidades SAST excedem as políticas definidas."
             echo "Políticas definidas para SAST: CRITICAL=$SAST_CRITICAL, HIGH=$SAST_HIGH, MEDIUM=$SAST_MEDIUM, LOW=$SAST_LOW"
             echo "Vulnerabilidades encontradas para SAST: CRITICAL=$sast_critical, HIGH=$sast_high, MEDIUM=$sast_medium, LOW=$sast_low"
-            exit 1
+            if [ "$PIPEACTION" == "fail" ]; then
+              exit 1
+            elif [ "$PIPEACTION" == "warn" ]; then
+              echo "::warning::Vulnerabilidades SAST excedem as políticas definidas."
+            fi
           fi
 
           # Comparar SCA
@@ -990,7 +1001,11 @@ runs:
             echo "::error::Vulnerabilidades SCA excedem as políticas definidas."
             echo "Políticas definidas para SCA: CRITICAL=$SCA_CRITICAL, HIGH=$SCA_HIGH, MEDIUM=$SCA_MEDIUM, LOW=$SCA_LOW"
             echo "Vulnerabilidades encontradas para SCA: CRITICAL=$sca_critical, HIGH=$sca_high, MEDIUM=$sca_medium, LOW=$sca_low"
-            exit 1
+            if [ "$PIPEACTION" == "fail" ]; then
+              exit 1
+            elif [ "$PIPEACTION" == "warn" ]; then
+              echo "::warning::Vulnerabilidades SCA excedem as políticas definidas."
+            fi
           fi
 
           # Comparar DAST
@@ -998,7 +1013,11 @@ runs:
             echo "::error::Vulnerabilidades DAST excedem as políticas definidas."
             echo "Políticas definidas para DAST: CRITICAL=$DAST_CRITICAL, HIGH=$DAST_HIGH, MEDIUM=$DAST_MEDIUM, LOW=$DAST_LOW"
             echo "Vulnerabilidades encontradas para DAST: CRITICAL=$dast_critical, HIGH=$dast_high, MEDIUM=$dast_medium, LOW=$dast_low"
-            exit 1
+            if [ "$PIPEACTION" == "fail" ]; then
+              exit 1
+            elif [ "$PIPEACTION" == "warn" ]; then
+              echo "::warning::Vulnerabilidades DAST excedem as políticas definidas."
+            fi
           fi
 
           echo "::notice::Todas as vulnerabilidades estão dentro das políticas definidas."
