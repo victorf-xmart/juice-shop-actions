@@ -1,4 +1,4 @@
-name: Security Scan ## Test com um quality gate de 50 vulns (todas as severidades) para DAST
+name: Security Scan # Testando em dev - senha alterada no gh secret env
 on:
   push:
     branches:
