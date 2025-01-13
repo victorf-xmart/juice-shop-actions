@@ -104,10 +104,6 @@ inputs:
     type: string
 
   # Configurações adicionais para o scan
-  # scan_name:
-  #   description: "O nome do scan."
-  #   default: ""
-  #   type: string
   translate:
     description: "O relatório será traduzido para português do Brasil?"
     default: "false"
@@ -148,7 +144,7 @@ outputs:
     description: "URL para visualizar os resultados do scan"
     value: ${{ steps.final_outputs.outputs.scan_url }}
   scan_version:
-    description: "Versão do scan (baseada no app_name + SHA do commit)"
+    description: "Versão do scan (baseada no app_name (nome da aplicação) + SHA do commit)"
     value: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
 
 runs:
@@ -162,26 +158,31 @@ runs:
         API_TOKEN: ${{ inputs.api_token }}
         GH_TOKEN: ${{ inputs.gh_token }}
       run: |
-        set -e
-        echo "Validando formato de email..."
+        echo "API_EMAIL: $API_EMAIL"
+        echo "API_PASSWORD: $API_PASSWORD"
+        echo "API_TOKEN: $API_TOKEN"
+        echo "GH_TOKEN: $GH_TOKEN"
+
+        # Validar formato de email
         if [[ ! "$API_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
           echo "::error::Formato de email inválido"
           exit 1
         fi
 
-        echo "Validando comprimento da senha..."
-        if [ ${#API_PASSWORD} -lt 8 ]; then
-          echo "::error::Senha deve ter pelo menos 8 caracteres"
+        # Validar comprimento mínimo da senha
+        PASSWORD_LENGTH=$(echo -n "$API_PASSWORD" | wc -c)
+        if [ $PASSWORD_LENGTH -lt 8 ]; then
+          echo "Error: Senha deve ter pelo menos 8 caracteres"
           exit 1
         fi
 
-        echo "Validando formato do GH Token..."
+        # Validar formato do GH Token (fine-grained)
         if [[ ! "$GH_TOKEN" =~ ^github_pat_[A-Za-z0-9_]{0,255}$ ]]; then
-          echo "::error::O token deve ser um GitHub fine-grained PAT (começando com 'github_pat_')"
+          echo "::error:: O token deve ser um GitHub fine-grained PAT (começando com 'github_pat_')"
           exit 1
         fi
 
-        echo "Validando API Token..."
+        # Validar API Token
         if [ -z "$API_TOKEN" ]; then
           echo "::error::API token não pode estar vazio"
           exit 1
@@ -198,7 +199,7 @@ runs:
 
         renew_token() {
           echo "Renovando token..."
-          response=$(curl -s -X POST 'https://auth.development.xguardianplatform.io/login' \
+          response=$(curl -s -X POST 'https://auth.xguardianplatform.io/login' \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
             -d '{"email": "'${API_EMAIL}'", "password": "'${API_PASSWORD}'"}' | jq -r '.token')
@@ -214,7 +215,7 @@ runs:
         }
 
         echo "Verificando validade do token..."
-        test_response=$(curl -s -X GET 'https://auth.development.xguardianplatform.io/ping' \
+        test_response=$(curl -s -X GET 'https://auth.xguardianplatform.io/ping' \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -231,11 +232,10 @@ runs:
       run: |
         echo "Atualizando pacotes..."
         sudo apt-get update
-
-        echo "Instalando curl, jq e zip..."
+        # Instalar todas as dependências necessárias de uma vez
         sudo apt-get install -y curl jq zip
 
-        echo "Instalando GitHub CLI..."
+        # Instalar GitHub CLI
         curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
         && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
         && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
@@ -249,7 +249,12 @@ runs:
         API_PASSWORD: ${{ inputs.api_password }}
         GITHUB_TOKEN: ${{ inputs.gh_token }}
       run: |
-        response=$(curl -X 'POST' 'https://auth.development.xguardianplatform.io/login' \
+        # Remover ou comentar estes logs de debug em produção
+        echo "Debug: API_EMAIL: ${API_EMAIL}"
+        echo "Debug: API_PASSWORD: ${API_PASSWORD}"
+
+        # Gera um novo token
+        response=$(curl -X 'POST' 'https://auth.xguardianplatform.io/login' \
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
           -d '{
@@ -260,6 +265,7 @@ runs:
         if [ -n "$response" ] && [ "$response" != "null" ]; then
           echo -n "$response" | gh secret set API_TOKEN
           echo "API_TOKEN=$response" >> $GITHUB_ENV
+          echo "Token atualizado com sucesso."
         else
           echo "::error::Não foi possível obter o token de autenticação."
           exit 1
@@ -278,9 +284,10 @@ runs:
         MICROSERVICES: ${{ inputs.microservices }}
         MICROSERVICES_DATA: ${{ inputs.microservices_data }}
       run: |
+        # Converte caracteres especiais para espaços, mantendo espaços existentes
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
 
-        CREATE_APP_URL="https://uploader-mvp.development.xguardianplatform.io/create_app"
+        CREATE_APP_URL="https://uploader-mvp.xguardianplatform.io/create_app"
 
         DATA=$(cat << EOF
         {
@@ -306,9 +313,11 @@ runs:
           -H 'Content-Type: application/json' \
           -d "${DATA}")
 
+        # Tentar extrair app_id do response
         APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
 
         if [ "$APP_ID" != "null" ] && [ ! -z "$APP_ID" ]; then
+          echo "Aplicação criada com sucesso. APP_ID: $APP_ID"
           echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
           POLICY_SAST=$(echo "$RESPONSE" | jq -r '.policies_id_sast')
@@ -331,14 +340,19 @@ runs:
           ERROR_DETAIL=$(echo "$RESPONSE" | jq -r '.detail // empty')
           
           if [[ "$ERROR_STATUS" = "400" ]] || [[ "$ERROR_DETAIL" == *"já existe"* ]]; then
+            echo "A aplicação já existe. Buscando o APP_ID existente..."
+            # Buscar o APP_ID da aplicação existente
             EXISTING_APP=$(curl -sS -X GET \
-              'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
+              'https://uploader-mvp.xguardianplatform.io/get_apps_total' \
               -H 'accept: application/json' \
               -H "Authorization: Bearer ${API_TOKEN}" )
             
             APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
 
             if [ -n "$APP_ID" ]; then
+              echo "APP_ID encontrado: $APP_ID para a aplicação: $APP_NAME"
+              echo "Detalhes da aplicação:"
+              echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.[] | select(.name == $NAME)'
               echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
               POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sast')
@@ -362,6 +376,7 @@ runs:
             fi
           else
             echo "::error::Erro inesperado na criação/verificação da aplicação"
+            echo "$RESPONSE"
             exit 1
           fi
         fi
@@ -374,7 +389,7 @@ runs:
       run: |
         fetch_policies() {
           local scan_type=$1
-          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
+          local response=$(curl -s -X GET "https://auth.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -414,7 +429,7 @@ runs:
           local scan_type=$1
           local app_policy_id=$2
 
-          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
+          local response=$(curl -s -X GET "https://auth.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -484,10 +499,14 @@ runs:
         PDF: ${{ inputs.pdf }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
       run: |
+        # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
         CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
+        echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
+        echo "Debug: SCAN_VERSION limpo: ${CLEAN_SCAN_VERSION}"
 
-        UPLOAD_URL="https://uploader-mvp.development.xguardianplatform.io/upload-url"
+        UPLOAD_URL="https://uploader-mvp.xguardianplatform.io/upload-url"
 
+        # Limpa o APP_NAME também para garantir consistência
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
         # XGB-1411 | Desativando o translate temporariamente
@@ -506,6 +525,13 @@ runs:
         EOF
         )
 
+        # Debug do payload formatado
+        echo "Debug: DATA (formatted):"
+        echo "${DATA}" | jq '.'
+
+        # Debug do payload original
+        echo "Debug: DATA (raw): ${DATA}"
+
         GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
@@ -517,6 +543,7 @@ runs:
           exit 1
         fi
 
+        echo "URL de Upload: ${GET_UPLOAD_URL}"
         echo "GET_UPLOAD_URL=${GET_UPLOAD_URL}" >> $GITHUB_ENV
 
     - name: Realizar o scan DAST
@@ -535,7 +562,7 @@ runs:
         TRANSLATE: ${{ inputs.translate }}
         PDF: ${{ inputs.pdf }}
       run: |
-        UPLOAD_DAST_URL="https://uploader-mvp.development.xguardianplatform.io/upload-dast"
+        UPLOAD_DAST_URL="https://uploader-mvp.xguardianplatform.io/upload-dast"
 
         DATA=$(cat << EOF
         {
@@ -578,26 +605,47 @@ runs:
         APP_NAME: ${{ inputs.app_name }}
         SCAN_DIR: ${{ inputs.scan_directory }}
       run: |
+        # Substituir caracteres especiais no nome do arquivo zip
         SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
         echo "SAFE_APP_NAME=${SAFE_APP_NAME}" >> $GITHUB_ENV
 
+        echo "Debug: SCAN_DIR configurado como: ${SCAN_DIR}"
+        echo "Debug: Estrutura do diretório atual:"
+        pwd
+        tree -L 2 || ls -R  # tenta usar tree, se não disponível usa ls -R
+
+        # Verifica se o diretório existe
         if [ ! -d "$SCAN_DIR" ]; then
           echo "Erro: Diretório '$SCAN_DIR' não encontrado no workspace"
           echo "Por favor, verifique se o diretório existe ou use '.' para o diretório raiz"
           exit 1
         fi
 
+        echo "Debug: Diretório atual antes do zip: $(pwd)"
+        echo "Debug: Conteúdo do diretório $SCAN_DIR:"
+        ls -la "$SCAN_DIR"
+
+        echo "Debug: Criando zip em ${SAFE_APP_NAME}.zip"
+
+        # Criar o zip no diretório atual
         if [ "$SCAN_DIR" = "." ]; then
+          # Se for diretório raiz, exclui alguns diretórios comuns
           zip -r "${SAFE_APP_NAME}.zip" . -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
         else
+          # Se for um diretório específico
           zip -r "${SAFE_APP_NAME}.zip" "$SCAN_DIR" -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
         fi
 
+        # Verificar se o arquivo zip foi criado
         if [ ! -f "${SAFE_APP_NAME}.zip" ]; then
           echo "Erro: Arquivo zip não foi criado com sucesso"
           ls -la
           exit 1
         fi
+
+        echo "Debug: Arquivo zip criado em: $(pwd)/${SAFE_APP_NAME}.zip"
+        echo "Debug: Tamanho do arquivo zip:"
+        du -h "${SAFE_APP_NAME}.zip"
 
     - name: Upload da aplicação para o scan (SAST e/ou SCA)
       if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
@@ -609,13 +657,29 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         GET_UPLOAD_URL: ${{ env.GET_UPLOAD_URL }}
       run: |
+        echo "Debug: Iniciando upload com SCAN_VERSION: ${SCAN_VERSION}"
+
+        # Verifica se o arquivo zip existe
         filePath="./${SAFE_APP_NAME}.zip"
 
+        echo "Debug: Diretório atual: $(pwd)"
+        echo "Debug: Listando arquivos:"
+        ls -la
+
+        echo "Debug: Procurando arquivo em: ${filePath}"
         if [ ! -f "${filePath}" ]; then
           echo "Erro: Arquivo ${filePath} não encontrado"
           exit 1
         fi
 
+        echo "Debug: Tamanho do arquivo:"
+        du -h "${filePath}"
+
+        # A URL já deve vir pronta para uso do endpoint anterior
+        echo "Debug: Upload URL: ${GET_UPLOAD_URL}"
+
+        # Upload com progresso visível e verificação de status
+        echo "Iniciando upload..."
         if curl --progress-bar --location --request PUT "${GET_UPLOAD_URL}" \
           --header 'Content-Type: application/zip' \
           --data-binary "@${filePath}"; then
@@ -645,22 +709,41 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
-        API_URL="https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
+        echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
+        echo "Debug: APP_ID: ${APP_ID}"
 
+        # URL da API (apenas primeira página)
+        API_URL="https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
+        echo "Debug: URL da API: ${API_URL}"
+
+        # Tenta obter o scan ID por até 5 minutos (30 tentativas, 10 segundos cada)
         for i in {1..30}; do
+          echo "Tentativa $i de 30..."
+          
+          # Captura a resposta completa
           RESPONSE=$(curl -sS -X GET "${API_URL}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
           
+          # Verifica se a resposta é um JSON válido
           if ! echo "$RESPONSE" | jq . >/dev/null 2>&1; then
+            echo "Debug: Resposta não é um JSON válido:"
+            echo "$RESPONSE"
             if [ $i -lt 30 ]; then
+              echo "Aguardando próxima tentativa..."
               sleep 10
               continue
             fi
             exit 1
           fi
 
+          # Debug da resposta (limitado aos campos relevantes)
+          echo "Debug: Scans encontrados:"
+          echo "$RESPONSE" | jq -r '.data[] | {scanuuid, id, scan_status, created_at}'
+          
+          # Verifica se a resposta tem a estrutura esperada e contém dados
           if [ "$(echo "$RESPONSE" | jq -r 'has("data")')" = "true" ] && [ "$(echo "$RESPONSE" | jq -r '.data | length')" -gt 0 ]; then
+            # Busca o scan com o SCAN_VERSION específico
             SCAN_DATA=$(echo "$RESPONSE" | jq -r --arg version "$SCAN_VERSION" '.data[] | select(.scanuuid == $version)')
             
             if [ -n "$SCAN_DATA" ] && [ "$SCAN_DATA" != "null" ]; then
@@ -668,12 +751,14 @@ runs:
               SCAN_STATUS=$(echo "$SCAN_DATA" | jq -r '.scan_status')
               CREATED_AT=$(echo "$SCAN_DATA" | jq -r '.created_at')
               
+              # Define as variáveis no ambiente
               {
                 echo "APP_ID=${APP_ID}"
                 echo "SCAN_ID=${SCAN_ID}"
-                echo "SCAN_URL=https://shield.development.xguardianplatform.io/aplicacoes/${APP_ID}/scans"
+                echo "SCAN_URL=https://shield.xguardianplatform.io/aplicacoes/${APP_ID}/scans"
               } >> "$GITHUB_ENV"
               
+              # Cria arquivo de estado com os dados
               echo "${APP_ID}:${SCAN_ID}" > /tmp/xguardian_scan_complete
               
               echo "::notice title=XGuardian Scan::Scan encontrado com sucesso!"
@@ -683,14 +768,21 @@ runs:
               echo "::notice title=XGuardian Scan::Status: ${SCAN_STATUS}"
               echo "::notice title=XGuardian Scan::Criado em: ${CREATED_AT}"
               break
+            else
+              echo "Debug: SCAN_ID não encontrado nesta tentativa"
+              echo "Debug: Procurando por versão: $SCAN_VERSION"
             fi
+          else
+            echo "Debug: Resposta não contém dados válidos"
           fi
           
           if [ $i -lt 30 ]; then
+            echo "Scan ainda não encontrado. Aguardando..."
             sleep 10
           fi
         done
 
+        # Verifica se o SCAN_ID foi encontrado
         if [ -z "$SCAN_ID" ] || [ "$SCAN_ID" == "null" ]; then
           echo "::error title=XGuardian Scan::Não foi possível encontrar o ID do Scan após múltiplas tentativas."
           echo "::error title=XGuardian Scan::Versão procurada: ${SCAN_VERSION}"
@@ -709,7 +801,7 @@ runs:
         SCAN_STATUS=""
 
         check_scan_status() {
-          local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
+          local response=$(curl -s -X GET "https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -780,7 +872,7 @@ runs:
         DAST_PIPEACTION: ${{ env.DAST_PIPEACTION }}
       run: |
         fetch_vulnerabilities() {
-          local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
+          local response=$(curl -s -X GET "https://reporter.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -881,22 +973,32 @@ runs:
           exit 1
         fi
 
+        # Lê os valores do arquivo de estado
         IFS=':' read -r app_id scan_id < /tmp/xguardian_scan_complete
 
+        # Valida os valores
         if [ -z "$app_id" ] || [ -z "$scan_id" ]; then
           echo "::error title=XGuardian Scan::Dados inválidos no arquivo de estado"
           exit 1
         fi
 
+        # Define os outputs corretamente
         echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
         echo "scan_id=$scan_id" >> "$GITHUB_OUTPUT"
-        echo "scan_url=https://shield.development.xguardianplatform.io/aplicacoes/$app_id/scans" >> "$GITHUB_OUTPUT"
+        echo "scan_url=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans" >> "$GITHUB_OUTPUT"
 
+        # Define também no ambiente para compatibilidade
         {
           echo "APP_ID=$app_id"
           echo "SCAN_ID=$scan_id"
-          echo "SCAN_URL=https://shield.development.xguardianplatform.io/aplicacoes/$app_id/scans"
+          echo "SCAN_URL=https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
         } >> "$GITHUB_ENV"
+
+        # Log para debug
+        echo "Debug: Outputs definidos"
+        echo "app_id: $app_id"
+        echo "scan_id: $scan_id"
+        echo "scan_url: https://shield.xguardianplatform.io/aplicacoes/$app_id/scans"
 
     - name: Salvar vulnerabilidades no banco de dados
       if: ${{ inputs.save_vulns == 'true' }}
@@ -905,7 +1007,7 @@ runs:
         APP_ID: ${{ env.APP_ID }}
         API_TOKEN: ${{ inputs.api_token }}
       run: |
-        PATCH_URL="https://uploader-mvp.development.xguardianplatform.io/accept_save_vulns"
+        PATCH_URL="https://uploader-mvp.xguardianplatform.io/accept_save_vulns"
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
@@ -914,6 +1016,7 @@ runs:
         EOF
         )
 
+        # Captura tanto o status HTTP quanto o corpo da resposta
         RESPONSE=$(curl -sS -X PATCH "${PATCH_URL}" \
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
@@ -923,6 +1026,9 @@ runs:
 
         HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
         RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+
+        echo "Status HTTP: $HTTP_STATUS"
+        echo "Resposta: $RESPONSE_BODY"
 
         if [ "$HTTP_STATUS" -eq 200 ]; then
           echo "Vulnerabilidades salvas com sucesso no banco de dados."
