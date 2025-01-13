@@ -355,20 +355,25 @@ runs:
           local medium=$4
           local low=$5
 
+          local payload=$(cat <<EOF
+          {
+            "name": "policy_${scan_type}",
+            "description": "Policy for ${scan_type}",
+            "rating": ${POLICY_RATING},
+            "critical": ${critical},
+            "high": ${high},
+            "medium": ${medium},
+            "low": ${low},
+            "pipeaction": "${POLICY_PIPEACTION}"
+          }
+          EOF
+          )
+
           local response=$(curl -s -X POST "https://auth.development.xguardianplatform.io/create_policy_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}" \
             -H 'Content-Type: application/json' \
-            -d "{
-              \"name\": \"policy_${scan_type}\",
-              \"description\": \"Policy for ${scan_type}\",
-              \"rating\": ${POLICY_RATING},
-              \"critical\": ${critical},
-              \"high\": ${high},
-              \"medium\": ${medium},
-              \"low\": ${low},
-              \"pipeaction\": \"${POLICY_PIPEACTION}\"
-            }")
+            -d "${payload}")
 
           echo "Response for creating ${scan_type} policy: $response"
         }
