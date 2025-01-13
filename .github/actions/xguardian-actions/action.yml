@@ -418,60 +418,41 @@ runs:
             exit 1
           }
 
-          local policies=$(echo "$response" | jq -r '
-            .[] | select(.name and .description) | 
-            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
-            @base64')
+          local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == ($id | tonumber))')
+          echo "$policy" | jq '.'
 
-          local default_policy_id=$(echo "$response" | jq -r '
-            .[] | select(.name and .description) | 
-            select((.name | ascii_downcase) == "default" and (.description | ascii_downcase) == "default") | 
-            .id')
-
-          if [ -n "$policies" ]; then
-            echo "Políticas encontradas para ${scan_type}:"
-            echo "$policies" | while read -r policy; do
-              echo "$policy" | base64 --decode | jq '.'
-            done
-
-            echo "Política atribuída para ${scan_type}: $app_policy_id"
-            local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == ($id | tonumber))')
-            echo "$policy" | jq '.'
-
-            if [ -z "$policy" ]; then
-              echo "::error::Política atribuída para ${scan_type} não encontrada: $app_policy_id"
-              exit 1
-            fi
-
-            export CRITICAL=$(echo "$policy" | jq -r '.critical')
-            export HIGH=$(echo "$policy" | jq -r '.high')
-            export MEDIUM=$(echo "$policy" | jq -r '.medium')
-            export LOW=$(echo "$policy" | jq -r '.low')
-            export RATING=$(echo "$policy" | jq -r '.rating')
-            export PIPEACTION=$(echo "$policy" | jq -r '.pipeaction')
-
-            if [ -z "$CRITICAL" ] || [ -z "$HIGH" ] || [ -z "$MEDIUM" ] || [ -z "$LOW" ] || [ -z "$RATING" ] || [ -z "$PIPEACTION" ]; then
-              echo "::error::Falha ao atribuir variáveis de ambiente para ${scan_type}"
-              exit 1
-            fi
-
-            echo "${scan_type^^}_CRITICAL=$CRITICAL" >> $GITHUB_ENV
-            echo "${scan_type^^}_HIGH=$HIGH" >> $GITHUB_ENV
-            echo "${scan_type^^}_MEDIUM=$MEDIUM" >> $GITHUB_ENV
-            echo "${scan_type^^}_LOW=$LOW" >> $GITHUB_ENV
-            echo "${scan_type^^}_RATING=$RATING" >> $GITHUB_ENV
-            echo "${scan_type^^}_PIPEACTION=$PIPEACTION" >> $GITHUB_ENV
-
-            echo "Configurações da política exportadas como variáveis de ambiente:"
-            echo "${scan_type^^}_CRITICAL=$CRITICAL"
-            echo "${scan_type^^}_HIGH=$HIGH"
-            echo "${scan_type^^}_MEDIUM=$MEDIUM"
-            echo "${scan_type^^}_LOW=$LOW"
-            echo "${scan_type^^}_RATING=$RATING"
-            echo "${scan_type^^}_PIPEACTION=$PIPEACTION"
-          else
-            echo "Nenhuma política encontrada para ${scan_type}."
+          if [ -z "$policy" ]; then
+            echo "::error::Política atribuída para ${scan_type} não encontrada: $app_policy_id"
+            exit 1
           fi
+
+          export CRITICAL=$(echo "$policy" | jq -r '.critical')
+          export HIGH=$(echo "$policy" | jq -r '.high')
+          export MEDIUM=$(echo "$policy" | jq -r '.medium')
+          export LOW=$(echo "$policy" | jq -r '.low')
+          export RATING=$(echo "$policy" | jq -r '.rating')
+          export PIPEACTION=$(echo "$policy" | jq -r '.pipeaction')
+
+          if [ -z "$CRITICAL" ] || [ -z "$HIGH" ] || [ -z "$MEDIUM" ] || [ -z "$LOW" ] || [ -z "$RATING" ] || [ -z "$PIPEACTION" ]; then
+            echo "::error::Falha ao atribuir variáveis de ambiente para ${scan_type}"
+            exit 1
+          fi
+
+          echo "Política atribuída para ${scan_type}:"
+          echo "ID: $app_policy_id"
+          echo "CRITICAL: $CRITICAL"
+          echo "HIGH: $HIGH"
+          echo "MEDIUM: $MEDIUM"
+          echo "LOW: $LOW"
+          echo "RATING: $RATING"
+          echo "PIPEACTION: $PIPEACTION"
+
+          echo "${scan_type^^}_CRITICAL=$CRITICAL" >> $GITHUB_ENV
+          echo "${scan_type^^}_HIGH=$HIGH" >> $GITHUB_ENV
+          echo "${scan_type^^}_MEDIUM=$MEDIUM" >> $GITHUB_ENV
+          echo "${scan_type^^}_LOW=$LOW" >> $GITHUB_ENV
+          echo "${scan_type^^}_RATING=$RATING" >> $GITHUB_ENV
+          echo "${scan_type^^}_PIPEACTION=$PIPEACTION" >> $GITHUB_ENV
         }
 
         check_policies "sast" "${POLICY_SAST}"
