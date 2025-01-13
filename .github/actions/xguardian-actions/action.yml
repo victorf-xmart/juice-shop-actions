@@ -162,25 +162,26 @@ runs:
         API_TOKEN: ${{ inputs.api_token }}
         GH_TOKEN: ${{ inputs.gh_token }}
       run: |
-        # Validar formato de email
+        set -e
+        echo "Validando formato de email..."
         if [[ ! "$API_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
           echo "::error::Formato de email inválido"
           exit 1
         fi
 
-        # Validar comprimento mínimo da senha
+        echo "Validando comprimento da senha..."
         if [ ${#API_PASSWORD} -lt 8 ]; then
           echo "::error::Senha deve ter pelo menos 8 caracteres"
           exit 1
         fi
 
-        # Validar formato do GH Token (fine-grained)
+        echo "Validando formato do GH Token..."
         if [[ ! "$GH_TOKEN" =~ ^github_pat_[A-Za-z0-9_]{0,255}$ ]]; then
           echo "::error::O token deve ser um GitHub fine-grained PAT (começando com 'github_pat_')"
           exit 1
         fi
 
-        # Validar API Token
+        echo "Validando API Token..."
         if [ -z "$API_TOKEN" ]; then
           echo "::error::API token não pode estar vazio"
           exit 1
@@ -196,21 +197,23 @@ runs:
         set -e
 
         renew_token() {
+          echo "Renovando token..."
           response=$(curl -s -X POST 'https://auth.development.xguardianplatform.io/login' \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
             -d '{"email": "'${API_EMAIL}'", "password": "'${API_PASSWORD}'"}' | jq -r '.token')
             
           if [[ -n "$response" && "$response" != "null" ]]; then
-            echo "New token obtained successfully."
+            echo "Novo token obtido com sucesso."
             echo "API_TOKEN=$response" >> $GITHUB_ENV
             API_TOKEN=$response
           else
-            echo "Failed to obtain a new token."
+            echo "::error::Falha ao obter novo token."
             exit 1
           fi
         }
 
+        echo "Verificando validade do token..."
         test_response=$(curl -s -X GET 'https://auth.development.xguardianplatform.io/ping' \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
@@ -218,7 +221,7 @@ runs:
         if echo "$test_response" | grep -q '"detail": "Token is invalid, Signature has expired."'; then
           renew_token
         else
-          echo "Token is valid."
+          echo "Token válido."
         fi
 
     - name: Instalar dependências
@@ -226,9 +229,13 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.gh_token }}
       run: |
+        echo "Atualizando pacotes..."
         sudo apt-get update
+
+        echo "Instalando curl, jq e zip..."
         sudo apt-get install -y curl jq zip
 
+        echo "Instalando GitHub CLI..."
         curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
         && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
         && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
