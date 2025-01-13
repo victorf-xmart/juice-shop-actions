@@ -371,7 +371,6 @@ runs:
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
-          echo "Debug: Resposta da API para ${scan_type}:"
           echo "$response" | jq '.' || {
             echo "::error::Resposta da API não é um JSON válido: $response"
             exit 1
@@ -412,7 +411,6 @@ runs:
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
-          echo "Debug: Resposta da API para ${scan_type}:"
           echo "$response" | jq '.' || {
             echo "::error::Resposta da API não é um JSON válido: $response"
             exit 1
