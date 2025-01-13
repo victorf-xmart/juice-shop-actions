@@ -573,6 +573,15 @@ runs:
           -H 'Content-Type: application/json' \
           -d "${DATA}")
 
+        if echo "$RESPONSE" | grep -q '"detail": "Token is invalid, Signature has expired."'; then
+          renew_token
+          RESPONSE=$(curl -sS -X POST "${UPLOAD_DAST_URL}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "${DATA}")
+        fi
+
         echo "Resposta do upload DAST:"
         echo "$RESPONSE"
 
