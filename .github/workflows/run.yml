@@ -1,11 +1,11 @@
-name: Security Scan # Testando em dev - senha alterada no gh secret env
+name: Security Scan
 on:
   push:
     branches:
       - main
 
 jobs:
-  quality-gate:
+  quality-gate-test:
     # https://github.com/actions/runner-images/issues/10636  
     runs-on: ubuntu-latest
     steps:
@@ -21,15 +21,8 @@ jobs:
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
           app_name: "quality-gate"
-          team_id: "[1115]"
           dast: "true"
           site_url: "http://www.bancocn.com/"
-          auth_url: ""
-          logout_url: ""
-          user_login: ""
-          password_login: ""
-          translate: false
-          pdf: false
 
 # name: Build and Security Scan
 # # coment para testes workflow
