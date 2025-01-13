@@ -103,6 +103,68 @@ inputs:
     required: false
     type: string
 
+  # Criação das políticas
+  create_policies:
+    description: "Deseja criar políticas de segurança se a aplicação não existir?"
+    default: "false"
+    type: string
+  sast_critical:
+    description: "Número crítico para SAST."
+    default: "0"
+    type: string
+  sast_high:
+    description: "Número alto para SAST."
+    default: "0"
+    type: string
+  sast_medium:
+    description: "Número médio para SAST."
+    default: "0"
+    type: string
+  sast_low:
+    description: "Número baixo para SAST."
+    default: "0"
+    type: string
+  sca_critical:
+    description: "Número crítico para SCA."
+    default: "0"
+    type: string
+  sca_high:
+    description: "Número alto para SCA."
+    default: "0"
+    type: string
+  sca_medium:
+    description: "Número médio para SCA."
+    default: "0"
+    type: string
+  sca_low:
+    description: "Número baixo para SCA."
+    default: "0"
+    type: string
+  dast_critical:
+    description: "Número crítico para DAST."
+    default: "0"
+    type: string
+  dast_high:
+    description: "Número alto para DAST."
+    default: "0"
+    type: string
+  dast_medium:
+    description: "Número médio para DAST."
+    default: "0"
+    type: string
+  dast_low:
+    description: "Número baixo para DAST."
+    default: "0"
+    type: string
+  policy_rating:
+    description: "Rating da política."
+    default: "0"
+    type: string
+  policy_pipeaction:
+    description: "Ação do pipeline para a política."
+    default: "fail"
+    type: string
+
   # Configurações adicionais para o scan
   # scan_name:
   #   description: "O nome do scan."
@@ -270,43 +332,61 @@ runs:
         POLICY_DAST: ${{ inputs.policy_dast }}
         MICROSERVICES: ${{ inputs.microservices }}
         MICROSERVICES_DATA: ${{ inputs.microservices_data }}
+        CREATE_POLICIES: ${{ inputs.create_policies }}
+        POLICY_RATING: ${{ inputs.policy_rating }}
+        POLICY_PIPEACTION: ${{ inputs.policy_pipeaction }}
+        SAST_CRITICAL: ${{ inputs.sast_critical }}
+        SAST_HIGH: ${{ inputs.sast_high }}
+        SAST_MEDIUM: ${{ inputs.sast_medium }}
+        SAST_LOW: ${{ inputs.sast_low }}
+        SCA_CRITICAL: ${{ inputs.sca_critical }}
+        SCA_HIGH: ${{ inputs.sca_high }}
+        SCA_MEDIUM: ${{ inputs.sca_medium }}
+        SCA_LOW: ${{ inputs.sca_low }}
+        DAST_CRITICAL: ${{ inputs.dast_critical }}
+        DAST_HIGH: ${{ inputs.dast_high }}
+        DAST_MEDIUM: ${{ inputs.dast_medium }}
+        DAST_LOW: ${{ inputs.dast_low }}
       run: |
-        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
+        check_or_create_policy() {
+          local scan_type=$1
+          local critical=$2
+          local high=$3
+          local medium=$4
+          local low=$5
 
-        CREATE_APP_URL="https://uploader-mvp.development.xguardianplatform.io/create_app"
+          local response=$(curl -s -X POST "https://auth.development.xguardianplatform.io/create_policy_${scan_type}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"name\": \"policy_${scan_type}\",
+              \"description\": \"Policy for ${scan_type}\",
+              \"rating\": ${POLICY_RATING},
+              \"critical\": ${critical},
+              \"high\": ${high},
+              \"medium\": ${medium},
+              \"low\": ${low},
+              \"pipeaction\": \"${POLICY_PIPEACTION}\"
+            }")
 
-        DATA=$(cat << EOF
-        {
-          "app_name": "${APP_NAME}",
-          "team_id": ${TEAM_ID},
-          "languages": ${LANGUAGES},
-          "description": "${DESCRIPTION}",
-          "policy": 0,
-          "policy_sast": ${POLICY_SAST},
-          "policy_sca": ${POLICY_SCA},
-          "policy_dast": ${POLICY_DAST},
-          "policy_container": 0,
-          "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
-          $([[ "${MICROSERVICES}" == "true" ]] && echo ',
-          "microservices_data": ${MICROSERVICES_DATA}')
+          echo "Response for creating ${scan_type} policy: $response"
         }
-        EOF
-        )
 
-        RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
+        # Verificar se a aplicação já existe
+        EXISTING_APP=$(curl -sS -X GET \
+          'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
           -H 'accept: application/json' \
-          -H "Authorization: Bearer ${API_TOKEN}" \
-          -H 'Content-Type: application/json' \
-          -d "${DATA}")
+          -H "Authorization: Bearer ${API_TOKEN}" )
 
-        APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
+        APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
 
-        if [ "$APP_ID" != "null" ] && [ ! -z "$APP_ID" ]; then
+        if [ -n "$APP_ID" ]; then
           echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
-          POLICY_SAST=$(echo "$RESPONSE" | jq -r '.policies_id_sast')
-          POLICY_SCA=$(echo "$RESPONSE" | jq -r '.policies_id_sca')
-          POLICY_DAST=$(echo "$RESPONSE" | jq -r '.policies_id_dast')
+          POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sast')
+          POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sca')
+          POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_dast')
 
           if [ -n "$POLICY_SAST" ]; then
             echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
@@ -320,41 +400,64 @@ runs:
             echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
           fi
         else
-          ERROR_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
-          ERROR_DETAIL=$(echo "$RESPONSE" | jq -r '.detail // empty')
-          
-          if [[ "$ERROR_STATUS" = "400" ]] || [[ "$ERROR_DETAIL" == *"já existe"* ]]; then
-            EXISTING_APP=$(curl -sS -X GET \
-              'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
-              -H 'accept: application/json' \
-              -H "Authorization: Bearer ${API_TOKEN}" )
-            
-            APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
+          # Criar a aplicação se não existir
+          CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
 
-            if [ -n "$APP_ID" ]; then
-              echo "APP_ID=$APP_ID" >> $GITHUB_ENV
+          CREATE_APP_URL="https://uploader-mvp.development.xguardianplatform.io/create_app"
 
-              POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sast')
-              POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sca')
-              POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_dast')
+          DATA=$(cat << EOF
+          {
+            "app_name": "${APP_NAME}",
+            "team_id": ${TEAM_ID},
+            "languages": ${LANGUAGES},
+            "description": "${DESCRIPTION}",
+            "policy": 0,
+            "policy_sast": ${POLICY_SAST},
+            "policy_sca": ${POLICY_SCA},
+            "policy_dast": ${POLICY_DAST},
+            "policy_container": 0,
+            "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
+            $([[ "${MICROSERVICES}" == "true" ]] && echo ',
+            "microservices_data": ${MICROSERVICES_DATA}')
+          }
+          EOF
+          )
 
-              if [ -n "$POLICY_SAST" ]; then
-                echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
-              fi
+          RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "${DATA}")
 
-              if [ -n "$POLICY_SCA" ]; then
-                echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
-              fi
+          APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
 
-              if [ -n "$POLICY_DAST" ]; then
-                echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
-              fi
-            else
-              echo "::error::Não foi possível encontrar o APP_ID da aplicação existente"
-              exit 1
+          if [ "$APP_ID" != "null" ] && [ ! -z "$APP_ID" ]; then
+            echo "APP_ID=$APP_ID" >> $GITHUB_ENV
+
+            POLICY_SAST=$(echo "$RESPONSE" | jq -r '.policies_id_sast')
+            POLICY_SCA=$(echo "$RESPONSE" | jq -r '.policies_id_sca')
+            POLICY_DAST=$(echo "$RESPONSE" | jq -r '.policies_id_dast')
+
+            if [ -n "$POLICY_SAST" ]; then
+              echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
+            fi
+
+            if [ -n "$POLICY_SCA" ]; then
+              echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
+            fi
+
+            if [ -n "$POLICY_DAST" ]; then
+              echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
+            fi
+
+            # Criar políticas se solicitado
+            if [ "$CREATE_POLICIES" == "true" ]; then
+              check_or_create_policy "sast" "${SAST_CRITICAL}" "${SAST_HIGH}" "${SAST_MEDIUM}" "${SAST_LOW}"
+              check_or_create_policy "sca" "${SCA_CRITICAL}" "${SCA_HIGH}" "${SCA_MEDIUM}" "${SCA_LOW}"
+              check_or_create_policy "dast" "${DAST_CRITICAL}" "${DAST_HIGH}" "${DAST_MEDIUM}" "${DAST_LOW}"
             fi
           else
-            echo "::error::Erro inesperado na criação/verificação da aplicação"
+            echo "::error::Erro inesperado na criação da aplicação"
             exit 1
           fi
         fi
