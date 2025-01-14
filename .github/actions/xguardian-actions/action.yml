@@ -332,8 +332,8 @@ runs:
             $([[ "${MICROSERVICES}" == "true" ]] && echo ',
             "microservices_data": ${MICROSERVICES_DATA}')
           }
-          EOF
           )
+          EOF
 
           RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
             -H 'accept: application/json' \
