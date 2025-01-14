@@ -132,7 +132,6 @@ inputs:
   pipeaction:
     description: "Ação na pipeline em caso de vulnerabilidades (warn, fail, noAction)."
     default: "noAction"
-    required: false
     type: string
     required: false
 
