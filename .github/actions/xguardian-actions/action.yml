@@ -538,6 +538,9 @@ runs:
         EOF
         )
 
+        echo "Payload para o upload SAST/SCA:"
+        echo "${DATA}" | jq '.'
+
         # Debug do payload formatado
         echo "Debug: DATA (formatted):"
         echo "${DATA}" | jq '.' || { echo "Erro: JSON inválido"; exit 1; }
