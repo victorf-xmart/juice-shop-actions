@@ -23,6 +23,7 @@ jobs:
           app_name: "quality-gate"
           team_id: "[1115]"
           sast: "true"
+          sca: "true"
 
 # name: Build and Security Scan
 # # coment para testes workflow
