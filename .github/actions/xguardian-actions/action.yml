@@ -284,45 +284,23 @@ runs:
         MICROSERVICES: ${{ inputs.microservices }}
         MICROSERVICES_DATA: ${{ inputs.microservices_data }}
       run: |
-        # Converte caracteres especiais para espaços, mantendo espaços existentes
-        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
-
-        CREATE_APP_URL="https://uploader-mvp.development.xguardianplatform.io/create_app"
-
-        DATA=$(cat << EOF
-        {
-          "app_name": "${APP_NAME}",
-          "team_id": ${TEAM_ID},
-          "languages": ${LANGUAGES},
-          "description": "${DESCRIPTION}",
-          "policy": 0,
-          "policy_sast": ${POLICY_SAST},
-          "policy_sca": ${POLICY_SCA},
-          "policy_dast": ${POLICY_DAST},
-          "policy_container": 0,
-          "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
-          $([[ "${MICROSERVICES}" == "true" ]] && echo ',
-          "microservices_data": ${MICROSERVICES_DATA}')
-        }
-        EOF
-        )
-
-        RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
+        # Buscar o APP_ID da aplicação existente
+        EXISTING_APP=$(curl -sS -X GET \
+          'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
           -H 'accept: application/json' \
-          -H "Authorization: Bearer ${API_TOKEN}" \
-          -H 'Content-Type: application/json' \
-          -d "${DATA}")
+          -H "Authorization: Bearer ${API_TOKEN}" )
 
-        # Tentar extrair app_id do response
-        APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
+        APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
 
-        if [ "$APP_ID" != "null" ] && [ ! -z "$APP_ID" ]; then
-          echo "Aplicação criada com sucesso. APP_ID: $APP_ID"
+        if [ -n "$APP_ID" ]; then
+          echo "APP_ID encontrado: $APP_ID para a aplicação: $APP_NAME"
+          echo "Detalhes da aplicação:"
+          echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.[] | select(.name == $NAME)'
           echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
-          POLICY_SAST=$(echo "$RESPONSE" | jq -r '.policies_id_sast')
-          POLICY_SCA=$(echo "$RESPONSE" | jq -r '.policies_id_sca')
-          POLICY_DAST=$(echo "$RESPONSE" | jq -r '.policies_id_dast')
+          POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sast')
+          POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sca')
+          POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_dast')
 
           if [ -n "$POLICY_SAST" ]; then
             echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
@@ -336,86 +314,60 @@ runs:
             echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
           fi
         else
-          ERROR_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
-          ERROR_DETAIL=$(echo "$RESPONSE" | jq -r '.detail // empty')
-          
-          if [[ "$ERROR_STATUS" = "400" ]] || [[ "$ERROR_DETAIL" == *"já existe"* ]]; then
-            echo "A aplicação já existe. Buscando o APP_ID existente..."
-            # Buscar o APP_ID da aplicação existente
-            EXISTING_APP=$(curl -sS -X GET \
-              'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
-              -H 'accept: application/json' \
-              -H "Authorization: Bearer ${API_TOKEN}" )
-            
-            APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
+          echo "A aplicação não existe. Criando a aplicação..."
+          CREATE_APP_URL="https://uploader-mvp.development.xguardianplatform.io/create_app"
 
-            if [ -n "$APP_ID" ]; then
-              echo "APP_ID encontrado: $APP_ID para a aplicação: $APP_NAME"
-              echo "Detalhes da aplicação:"
-              echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.[] | select(.name == $NAME)'
-              echo "APP_ID=$APP_ID" >> $GITHUB_ENV
+          DATA=$(cat << EOF
+          {
+            "app_name": "${APP_NAME}",
+            "team_id": ${TEAM_ID},
+            "languages": ${LANGUAGES},
+            "description": "${DESCRIPTION}",
+            "policy": 0,
+            "policy_sast": ${POLICY_SAST},
+            "policy_sca": ${POLICY_SCA},
+            "policy_dast": ${POLICY_DAST},
+            "policy_container": 0,
+            "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
+            $([[ "${MICROSERVICES}" == "true" ]] && echo ',
+            "microservices_data": ${MICROSERVICES_DATA}')
+          }
+          EOF
+          )
 
-              POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sast')
-              POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sca')
-              POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_dast')
+          RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "${DATA}")
 
-              if [ -n "$POLICY_SAST" ]; then
-                echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
-              fi
+          APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
 
-              if [ -n "$POLICY_SCA" ]; then
-                echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
-              fi
+          if [ "$APP_ID" != "null" ] && [ ! -z "$APP_ID" ]; then
+            echo "Aplicação criada com sucesso. APP_ID: $APP_ID"
+            echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
-              if [ -n "$POLICY_DAST" ]; then
-                echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
-              fi
-            else
-              echo "::error::Não foi possível encontrar o APP_ID da aplicação existente"
-              exit 1
+            POLICY_SAST=$(echo "$RESPONSE" | jq -r '.policies_id_sast')
+            POLICY_SCA=$(echo "$RESPONSE" | jq -r '.policies_id_sca')
+            POLICY_DAST=$(echo "$RESPONSE" | jq -r '.policies_id_dast')
+
+            if [ -n "$POLICY_SAST" ]; then
+              echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
+            fi
+
+            if [ -n "$POLICY_SCA" ]; then
+              echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
+            fi
+
+            if [ -n "$POLICY_DAST" ]; then
+              echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
             fi
           else
-            echo "::error::Erro inesperado na criação/verificação da aplicação"
+            echo "::error::Erro inesperado na criação da aplicação"
             echo "$RESPONSE"
             exit 1
           fi
         fi
-
-    - name: Buscar políticas após criação da aplicação
-      shell: bash
-      env:
-        API_TOKEN: ${{ env.API_TOKEN }}
-        APP_ID: ${{ env.APP_ID }}
-      run: |
-        fetch_policies() {
-          local scan_type=$1
-          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
-            -H 'accept: application/json' \
-            -H "Authorization: Bearer ${API_TOKEN}")
-
-          echo "$response" | jq '.' || {
-            echo "::error::Resposta da API não é um JSON válido: $response"
-            exit 1
-          }
-
-          local policies=$(echo "$response" | jq -r '
-            .[] | select(.name and .description) | 
-            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
-            @base64')
-
-          if [ -n "$policies" ]; then
-            echo "Políticas encontradas para ${scan_type}:"
-            echo "$policies" | while read -r policy; do
-              echo "$policy" | base64 --decode | jq '.'
-            done
-          else
-            echo "Nenhuma política encontrada para ${scan_type}."
-          fi
-        }
-
-        fetch_policies "sast"
-        fetch_policies "sca"
-        fetch_policies "dast"
 
     - name: Verificar políticas definidas
       shell: bash
@@ -478,6 +430,42 @@ runs:
         check_policies "sast" "${POLICY_SAST}"
         check_policies "sca" "${POLICY_SCA}"
         check_policies "dast" "${POLICY_DAST}"
+
+    - name: Buscar políticas após criação da aplicação
+      shell: bash
+      env:
+        API_TOKEN: ${{ env.API_TOKEN }}
+        APP_ID: ${{ env.APP_ID }}
+      run: |
+        fetch_policies() {
+          local scan_type=$1
+          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}")
+
+          echo "$response" | jq '.' || {
+            echo "::error::Resposta da API não é um JSON válido: $response"
+            exit 1
+          }
+
+          local policies=$(echo "$response" | jq -r '
+            .[] | select(.name and .description) | 
+            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
+            @base64')
+
+          if [ -n "$policies" ]; then
+            echo "Políticas encontradas para ${scan_type}:"
+            echo "$policies" | while read -r policy; do
+              echo "$policy" | base64 --decode | jq '.'
+            done
+          else
+            echo "Nenhuma política encontrada para ${scan_type}."
+          fi
+        }
+
+        fetch_policies "sast"
+        fetch_policies "sca"
+        fetch_policies "dast"
 
     - name: Obter o short_sha
       id: vars
