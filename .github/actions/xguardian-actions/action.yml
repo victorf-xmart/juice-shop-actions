@@ -35,41 +35,52 @@ inputs:
   team_id:
     description: "O(s) ID(s) da(s) equipe(s)."
     default: "[1]"
+    required: true
   languages:
     description: "A(s) linguagem(ns) da aplicação."
     default: '["JavaScript"]'
+    required: true
   description:
     description: "A descrição da aplicação."
     default: "Aplicação criada através do GitHub Actions - XGuardian"
+    required: false
   policy_sast:
     description: "O ID da política de SAST."
     default: "0"
+    required: false
   policy_sca:
     description: "O ID da política de SCA."
     default: "0"
+    required: false
   policy_dast:
     description: "O ID da política de DAST."
     default: "0"
+    required: false
   microservices:
     description: "A aplicação possui microserviços?"
     default: "false"
+    required: false
   microservices_data:
     description: "O(s) dados do(s) microserviço(s): Nome(s) e linguagem(ns)."
     default: '[{"name": "MS1", "language": ["JavaScript"]}]'
+    required: false
 
   # Seleção do tipo de scan (SAST e/ou SCA ou DAST)
   sast:
     description: "Vai ser realizado o scan SAST?"
     default: '"false"'
     type: string
+    required: false
   sca:
     description: "Vai ser realizado o scan SCA?"
     default: '"false"'
     type: string
+    required: false
   dast:
     description: "Vai ser realizado o scan DAST?"
     default: '"false"'
     type: string
+    required: false
 
   # Configurações para o scan DAST
   site_url:
@@ -108,30 +119,37 @@ inputs:
     description: "O relatório será traduzido para português do Brasil?"
     default: "false"
     type: string
+    required: false
   exclude:
     description: "Diretórios ou arquivos a serem excluídos do scan."
     default: '""'
+    required: false
   pdf:
     description: "O relatório será gerado em PDF detalhado?"
     default: "false"
     type: string
+    required: false
   pipeaction:
     description: "Ação na pipeline em caso de vulnerabilidades (warn, fail, noAction)."
     default: "noAction"
     required: false
     type: string
+    required: false
 
   # Configurações opcionais (caso o usuário deseje)
   scan_directory:
     description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
     default: "." # Root do projeto
+    required: false
   get_scan_id:
     description: "Deseja buscar o ID do Scan após o upload?"
     default: '"false"'
     type: string
+    required: false
   save_vulns:
     description: "Permitir salvar vulnerabilidades no banco de dados?"
     default: "false"
+    required: false
 
 outputs:
   app_id:

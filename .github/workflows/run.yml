@@ -20,7 +20,7 @@ jobs:
           api_password: ${{ secrets.API_PASSWORD }}
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
-          app_name: ${{ github.event.repository.name }}
+          app_name: "teste-sem-ser-o-nome-do-repo"
           team_id: "[1115]"
           dast: "true"
           site_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/"
