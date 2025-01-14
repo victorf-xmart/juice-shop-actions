@@ -404,42 +404,6 @@ runs:
           fi
         fi
 
-    - name: Buscar políticas após criação da aplicação
-      shell: bash
-      env:
-        API_TOKEN: ${{ env.API_TOKEN }}
-        APP_ID: ${{ env.APP_ID }}
-      run: |
-        fetch_policies() {
-          local scan_type=$1
-          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
-            -H 'accept: application/json' \
-            -H "Authorization: Bearer ${API_TOKEN}")
-
-          echo "$response" | jq '.' || {
-            echo "::error::Resposta da API não é um JSON válido: $response"
-            exit 1
-          }
-
-          local policies=$(echo "$response" | jq -r '
-            .[] | select(.name and .description) | 
-            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
-            @base64')
-
-          if [ -n "$policies" ]; then
-            echo "Políticas encontradas para ${scan_type}:"
-            echo "$policies" | while read -r policy; do
-              echo "$policy" | base64 --decode | jq '.'
-            done
-          else
-            echo "Nenhuma política encontrada para ${scan_type}."
-          fi
-        }
-
-        fetch_policies "sast"
-        fetch_policies "sca"
-        fetch_policies "dast"
-
     - name: Verificar políticas definidas
       shell: bash
       env:
@@ -506,6 +470,43 @@ runs:
         check_policies "sast" "${POLICY_SAST}"
         check_policies "sca" "${POLICY_SCA}"
         check_policies "dast" "${POLICY_DAST}"
+
+    - name: Buscar políticas após criação da aplicação
+      if: false
+      shell: bash
+      env:
+        API_TOKEN: ${{ env.API_TOKEN }}
+        APP_ID: ${{ env.APP_ID }}
+      run: |
+        fetch_policies() {
+          local scan_type=$1
+          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}")
+
+          echo "$response" | jq '.' || {
+            echo "::error::Resposta da API não é um JSON válido: $response"
+            exit 1
+          }
+
+          local policies=$(echo "$response" | jq -r '
+            .[] | select(.name and .description) | 
+            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
+            @base64')
+
+          if [ -n "$policies" ]; then
+            echo "Políticas encontradas para ${scan_type}:"
+            echo "$policies" | while read -r policy; do
+              echo "$policy" | base64 --decode | jq '.'
+            done
+          else
+            echo "Nenhuma política encontrada para ${scan_type}."
+          fi
+        }
+
+        fetch_policies "sast"
+        fetch_policies "sca"
+        fetch_policies "dast"
 
     - name: Obter o short_sha
       id: vars
