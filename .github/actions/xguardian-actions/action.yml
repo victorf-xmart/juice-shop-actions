@@ -122,7 +122,8 @@ inputs:
     required: false
   exclude:
     description: "Diretórios ou arquivos a serem excluídos do scan."
-    default: '""'
+    default: ""
+    type: string
     required: false
   pdf:
     description: "O relatório será gerado em PDF detalhado?"
