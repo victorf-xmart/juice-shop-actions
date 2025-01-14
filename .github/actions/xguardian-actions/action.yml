@@ -113,7 +113,7 @@ inputs:
     default: '""'
   pdf:
     description: "O relatório será gerado em PDF detalhado?"
-    default: "false"
+    default: '"false"'
     type: string
   pipeaction:
     description: "Ação na pipeline em caso de vulnerabilidades (warn, fail, noAction)."
@@ -275,7 +275,6 @@ runs:
       shell: bash
       env:
         APP_NAME: ${{ inputs.app_name }}
-        API_TOKEN: ${{ env.API_TOKEN }}
         TEAM_ID: ${{ inputs.team_id }}
         LANGUAGES: ${{ inputs.languages }}
         DESCRIPTION: ${{ inputs.description }}
@@ -346,23 +345,8 @@ runs:
             EXISTING_APP=$(curl -sS -X GET \
               'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
               -H 'accept: application/json' \
-              -H "Authorization: Bearer ${API_TOKEN}")
-
-            # Verificar se a resposta é um JSON válido
-            if ! echo "$EXISTING_APP" | jq . >/dev/null 2>&1; then
-              echo "::error::Resposta da API não é um JSON válido:"
-              echo "$EXISTING_APP"
-              exit 1
-            fi
-
-            # Verificar se a resposta contém a estrutura esperada
-            if [ "$(echo "$EXISTING_APP" | jq -r 'type')" != "array" ]; then
-              echo "::error::Resposta da API não contém uma lista de aplicações:"
-              echo "$EXISTING_APP"
-              exit 1
-            fi
-
-            # Buscar o APP_ID da aplicação existente
+              -H "Authorization: Bearer ${API_TOKEN}" )
+            
             APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
 
             if [ -n "$APP_ID" ]; then
@@ -445,11 +429,6 @@ runs:
           local scan_type=$1
           local app_policy_id=$2
 
-          if [ "$app_policy_id" == "null" ]; then
-            echo "::warning::Política atribuída para ${scan_type} não encontrada: $app_policy_id. Pulando verificação."
-            return
-          fi
-
           local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
@@ -519,27 +498,39 @@ runs:
         EXCLUDE: ${{ inputs.exclude }}
         PDF: ${{ inputs.pdf }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
-        API_TOKEN: ${{ env.API_TOKEN }}
       run: |
+        # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
+        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
+        echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
+        echo "Debug: SCAN_VERSION limpo: ${CLEAN_SCAN_VERSION}"
+
         UPLOAD_URL="https://uploader-mvp.development.xguardianplatform.io/upload-url"
 
+        # Limpa o APP_NAME também para garantir consistência
+        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
+
         # XGB-1411 | Desativando o translate temporariamente
+        # "translate": "${TRANSLATE}",
         DATA=$(cat << EOF
         {
-          "app_id": "${APP_ID}",
-          "scan_version": "${SCAN_VERSION}",
+          "app_id": ${APP_ID},
+          "scan_version": "${CLEAN_SCAN_VERSION}",
           "file_type": "application/zip",
           "sca": "${SCA}",
           "sast": "${SAST}",
-          "translate": "${TRANSLATE}",
+          "translate": "false", 
           "exclude": "${EXCLUDE}",
           "pdf": "${PDF}"
         }
         EOF
         )
 
-        echo "Payload para o upload SAST/SCA:"
+        # Debug do payload formatado
+        echo "Debug: DATA (formatted):"
         echo "${DATA}" | jq '.'
+
+        # Debug do payload original
+        echo "Debug: DATA (raw): ${DATA}"
 
         GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
@@ -602,19 +593,6 @@ runs:
             -H "Authorization: Bearer ${API_TOKEN}" \
             -H 'Content-Type: application/json' \
             -d "${DATA}")
-        fi
-
-        SCAN_NAME=$(echo "$RESPONSE" | jq -r '.scan_name')
-        APP_NAME=$(echo "$RESPONSE" | jq -r '.app_name')
-        APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
-
-        if [ -n "$SCAN_NAME" ] && [ -n "$APP_NAME" ] && [ -n "$APP_ID" ]; then
-          echo "Scan Name: $SCAN_NAME"
-          echo "App Name: $APP_NAME"
-          echo "App ID: $APP_ID"
-        else
-          echo "::error::Falha ao obter informações do scan."
-          exit 1
         fi
 
         echo "Resposta do upload DAST:"
@@ -963,7 +941,6 @@ runs:
             local pipeaction=${10}
 
             if [ "$critical" -gt "$policy_critical" ] || [ "$high" -gt "$policy_high" ] || [ "$medium" -gt "$policy_medium" ] || [ "$low" -gt "$policy_low" ]; then
-              echo "::error::Vulnerabilidades ${scan_type^^} excedem as políticas definidas."
               echo "Políticas definidas para ${scan_type^^}: CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
               echo "Vulnerabilidades encontradas para ${scan_type^^}: CRITICAL=$critical, HIGH=$high, MEDIUM=$medium, LOW=$low"
               if [ "$pipeaction" == "fail" ]; then
