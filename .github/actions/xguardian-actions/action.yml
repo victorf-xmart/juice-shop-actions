@@ -274,7 +274,7 @@ runs:
     - name: Verificar se a aplicação existe, caso contrário, cria a aplicação
       shell: bash
       env:
-        APP_NAME: ${{ inputs.app_name }}
+        APP_NAME: ${{ github.event.repository.name }}
         TEAM_ID: ${{ inputs.team_id }}
         LANGUAGES: ${{ inputs.languages }}
         DESCRIPTION: ${{ inputs.description }}
@@ -347,6 +347,12 @@ runs:
               -H 'accept: application/json' \
               -H "Authorization: Bearer ${API_TOKEN}" )
             
+            # Verifica se a resposta é um JSON válido
+            if ! echo "$EXISTING_APP" | jq . >/dev/null 2>&1; then
+              echo "::error::Resposta da API não é um JSON válido: $EXISTING_APP"
+              exit 1
+            fi
+
             APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
 
             if [ -n "$APP_ID" ]; then
