@@ -521,9 +521,11 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         API_TOKEN: ${{ env.API_TOKEN }}
       run: |
+        # Debug do SCAN_VERSION original
+        echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
+
         # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
         CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
-        echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
         echo "Debug: SCAN_VERSION limpo: ${CLEAN_SCAN_VERSION}"
 
         UPLOAD_URL="https://uploader-mvp.development.xguardianplatform.io/upload-url"
