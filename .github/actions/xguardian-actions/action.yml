@@ -542,7 +542,7 @@ runs:
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
         # XGB-1411 | Desativando o translate temporariamente
-        # "translate": "${TRANSLATE}",
+        # "translate": "${TRANSLATE}"
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
@@ -552,7 +552,7 @@ runs:
           "sast": "${SAST}",
           "translate": "false", 
           "exclude": "${EXCLUDE}",
-          "pdf": "${PDF}"
+          "pdf": "${PDF}",
         }
         EOF
         )
