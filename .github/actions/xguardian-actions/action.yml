@@ -526,12 +526,12 @@ runs:
         # XGB-1411 | Desativando o translate temporariamente
         DATA=$(cat << EOF
         {
-          "app_id": ${APP_ID},
+          "app_id": "${APP_ID}",
           "scan_version": "${SCAN_VERSION}",
           "file_type": "application/zip",
           "sca": "${SCA}",
           "sast": "${SAST}",
-          "translate": "${TRANSLATE}", 
+          "translate": "${TRANSLATE}",
           "exclude": "${EXCLUDE}",
           "pdf": "${PDF}"
         }
