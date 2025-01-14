@@ -604,6 +604,10 @@ runs:
             -H "Authorization: Bearer ${API_TOKEN}" \
             -H 'Content-Type: application/json' \
             -d "${DATA}")
+
+            SCAN_NAME=$(echo "$RESPONSE" | jq -r '.scan_name')
+            APP_NAME=$(echo "$RESPONSE" | jq -r '.app_name')
+            APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
         fi
 
         SCAN_NAME=$(echo "$RESPONSE" | jq -r '.scan_name')
