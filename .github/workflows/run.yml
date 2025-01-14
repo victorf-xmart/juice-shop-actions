@@ -25,6 +25,7 @@ jobs:
           sast: "true"
           save_vulns: "true"
           get_scan_id: "true"
+          microservices: false
 
 # name: Build and Security Scan
 # # coment para testes workflow
