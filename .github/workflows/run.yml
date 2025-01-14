@@ -20,10 +20,9 @@ jobs:
           api_password: ${{ secrets.API_PASSWORD }}
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
-          app_name: "aaaaaaaaaaaaaaaa"
+          app_name: "quality-gate"
           team_id: "[1115]"
-          sast: "true"
-          sca: "true"
+          dast: "true"
 
 # name: Build and Security Scan
 # # coment para testes workflow
