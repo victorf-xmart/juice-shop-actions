@@ -189,13 +189,13 @@ runs:
         # Validar comprimento mínimo da senha
         PASSWORD_LENGTH=$(echo -n "$API_PASSWORD" | wc -c)
         if [ $PASSWORD_LENGTH -lt 8 ]; then
-          echo "Error: Senha deve ter pelo menos 8 caracteres"
+          echo "::error::Senha deve ter pelo menos 8 caracteres"
           exit 1
         fi
 
         # Validar formato do GH Token (fine-grained)
         if [[ ! "$GH_TOKEN" =~ ^github_pat_[A-Za-z0-9_]{0,255}$ ]]; then
-          echo "::error:: O token deve ser um GitHub fine-grained PAT (começando com 'github_pat_')"
+          echo "::error::O token deve ser um GitHub fine-grained PAT (começando com 'github_pat_')"
           exit 1
         fi
 
@@ -204,6 +204,8 @@ runs:
           echo "::error::API token não pode estar vazio"
           exit 1
         fi
+
+        echo "Todos os inputs sensíveis são válidos."
 
     - name: Validar e renovar token se necessário
       shell: bash
