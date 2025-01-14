@@ -862,7 +862,7 @@ runs:
       env:
         API_TOKEN: ${{ inputs.api_token }}
         APP_ID: ${{ env.APP_ID }}
-        SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
+        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
         SAST_CRITICAL: ${{ env.SAST_CRITICAL }}
         SAST_HIGH: ${{ env.SAST_HIGH }}
         SAST_MEDIUM: ${{ env.SAST_MEDIUM }}
