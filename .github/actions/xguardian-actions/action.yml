@@ -275,6 +275,7 @@ runs:
       shell: bash
       env:
         APP_NAME: ${{ inputs.app_name }}
+        API_TOKEN: ${{ env.API_TOKEN }}
         TEAM_ID: ${{ inputs.team_id }}
         LANGUAGES: ${{ inputs.languages }}
         DESCRIPTION: ${{ inputs.description }}
@@ -345,8 +346,23 @@ runs:
             EXISTING_APP=$(curl -sS -X GET \
               'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
               -H 'accept: application/json' \
-              -H "Authorization: Bearer ${API_TOKEN}" )
-            
+              -H "Authorization: Bearer ${API_TOKEN}")
+
+            # Verificar se a resposta é um JSON válido
+            if ! echo "$EXISTING_APP" | jq . >/dev/null 2>&1; then
+              echo "::error::Resposta da API não é um JSON válido:"
+              echo "$EXISTING_APP"
+              exit 1
+            fi
+
+            # Verificar se a resposta contém a estrutura esperada
+            if [ "$(echo "$EXISTING_APP" | jq -r 'type')" != "array" ]; then
+              echo "::error::Resposta da API não contém uma lista de aplicações:"
+              echo "$EXISTING_APP"
+              exit 1
+            fi
+
+            # Buscar o APP_ID da aplicação existente
             APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
 
             if [ -n "$APP_ID" ]; then
@@ -498,6 +514,7 @@ runs:
         EXCLUDE: ${{ inputs.exclude }}
         PDF: ${{ inputs.pdf }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
+        API_TOKEN: ${{ env.API_TOKEN }}
       run: |
         # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
         CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
@@ -535,7 +552,7 @@ runs:
         GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
-            -H "Authorization: ***" \
+            -H "Authorization: Bearer ${API_TOKEN}" \
             -d "${DATA}" | jq -r '.url')
 
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
