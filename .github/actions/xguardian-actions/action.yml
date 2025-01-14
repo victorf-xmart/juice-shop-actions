@@ -113,7 +113,7 @@ inputs:
     default: '""'
   pdf:
     description: "O relatório será gerado em PDF detalhado?"
-    default: '"false"'
+    default: "false"
     type: string
   pipeaction:
     description: "Ação na pipeline em caso de vulnerabilidades (warn, fail, noAction)."
