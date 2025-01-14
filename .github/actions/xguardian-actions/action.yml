@@ -527,7 +527,7 @@ runs:
 
         # Debug do payload formatado
         echo "Debug: DATA (formatted):"
-        echo "${DATA}" | jq '.'
+        echo "${DATA}" | jq '.' || { echo "Erro: JSON inválido"; exit 1; }
 
         # Debug do payload original
         echo "Debug: DATA (raw): ${DATA}"
@@ -535,7 +535,7 @@ runs:
         GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
-            -H "Authorization: Bearer ${API_TOKEN}" \
+            -H "Authorization: ***" \
             -d "${DATA}" | jq -r '.url')
 
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
