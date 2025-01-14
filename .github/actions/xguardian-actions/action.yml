@@ -317,21 +317,18 @@ runs:
           echo "A aplicação não existe. Criando a aplicação..."
           CREATE_APP_URL="https://uploader-mvp.development.xguardianplatform.io/create_app"
 
-          DATA=$(cat << EOF
-          {
-            "app_name": "${APP_NAME}",
-            "team_id": ${TEAM_ID},
-            "languages": ${LANGUAGES},
-            "description": "${DESCRIPTION}",
+          DATA=$(echo '{
+            "app_name": "'"${APP_NAME}"'",
+            "team_id": '"${TEAM_ID}"',
+            "languages": '"${LANGUAGES}"',
+            "description": "'"${DESCRIPTION}"'",
             "policy": 0,
-            "policy_sast": ${POLICY_SAST},
-            "policy_sca": ${POLICY_SCA},
-            "policy_dast": ${POLICY_DAST},
+            "policy_sast": '"${POLICY_SAST}"',
+            "policy_sca": '"${POLICY_SCA}"',
+            "policy_dast": '"${POLICY_DAST}"',
             "policy_container": 0,
-            "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)$( [[ "${MICROSERVICES}" == "true" ]] && echo ',"microservices_data": ${MICROSERVICES_DATA}')
-          }
-          EOF
-          )
+            "microservices": '"$([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)"''$([[ "${MICROSERVICES}" == "true" ]] && echo ',"microservices_data": '"${MICROSERVICES_DATA}"'')
+          }')
 
           RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
             -H 'accept: application/json' \
