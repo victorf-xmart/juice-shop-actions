@@ -144,8 +144,8 @@ outputs:
     description: "URL para visualizar os resultados do scan"
     value: ${{ steps.final_outputs.outputs.scan_url }}
   scan_version:
-    description: "Versão do scan (baseada no app_name (nome da aplicação) + SHA do commit)"
-    value: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
+    description: "Versão do scan (baseada no nome do repositório e SHA do commit)"
+    value: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
 
 runs:
   using: "composite"
@@ -497,7 +497,7 @@ runs:
         TRANSLATE: ${{ inputs.translate }}
         EXCLUDE: ${{ inputs.exclude }}
         PDF: ${{ inputs.pdf }}
-        SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
+        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
       run: |
         # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
         CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
@@ -552,7 +552,7 @@ runs:
       env:
         API_TOKEN: ${{ inputs.api_token }}
         APP_ID: ${{ env.APP_ID }}
-        SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
+        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
         SITE_URL: ${{ inputs.site_url }}
         AUTH_URL: ${{ inputs.auth_url }}
         LOGOUT_URL: ${{ inputs.logout_url }}
@@ -654,7 +654,7 @@ runs:
         SAFE_APP_NAME: ${{ env.SAFE_APP_NAME }}
         APP_NAME: ${{ inputs.app_name }}
         APP_ID: ${{ env.APP_ID }}
-        SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
+        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
         GET_UPLOAD_URL: ${{ env.GET_UPLOAD_URL }}
       run: |
         echo "Debug: Iniciando upload com SCAN_VERSION: ${SCAN_VERSION}"
@@ -706,7 +706,7 @@ runs:
       env:
         APP_ID: ${{ env.APP_ID }}
         API_TOKEN: ${{ inputs.api_token }}
-        SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
+        SCAN_VERSION: ${{ format('{0}-{1}', github.event.repository.name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
         echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
