@@ -20,7 +20,7 @@ jobs:
           api_password: ${{ secrets.API_PASSWORD }}
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
-          app_name: "final-test-quality-gate"
+          app_name: "quality-gate"
           team_id: "[1115]"
           sast: "true"
           save_vulns: "true"
