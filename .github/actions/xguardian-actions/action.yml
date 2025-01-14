@@ -538,7 +538,7 @@ runs:
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
-          "scan_version": "${CLEAN_SCAN_VERSION}",
+          "scan_version": "${SCAN_VERSION}",
           "file_type": "application/zip",
           "sca": "${SCA}",
           "sast": "${SAST}",
