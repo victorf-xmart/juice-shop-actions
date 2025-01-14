@@ -329,8 +329,7 @@ runs:
             "policy_dast": ${POLICY_DAST},
             "policy_container": 0,
             "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
-            $([[ "${MICROSERVICES}" == "true" ]] && echo ',
-            "microservices_data": ${MICROSERVICES_DATA}')
+            $([[ "${MICROSERVICES}" == "true" ]] && echo ',"microservices_data": ${MICROSERVICES_DATA}')
           }
           EOF
           )
