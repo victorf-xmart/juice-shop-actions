@@ -435,6 +435,11 @@ runs:
           local scan_type=$1
           local app_policy_id=$2
 
+          if [ "$app_policy_id" == "null" ]; then
+            echo "Política para ${scan_type} é null, pulando para o próximo step."
+            return
+          fi
+
           local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
