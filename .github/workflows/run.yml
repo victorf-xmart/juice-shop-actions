@@ -23,8 +23,6 @@ jobs:
           app_name: "quality-gate"
           team_id: "[1115]"
           sast: "true"
-          save_vulns: "true"
-          get_scan_id: "true"
           microservices: false
 
 # name: Build and Security Scan
