@@ -532,14 +532,14 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
       run: |
         # Limpa o SCAN_VERSION removendo caracteres especiais e espaços
-        CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
-        echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
-        echo "Debug: SCAN_VERSION limpo: ${CLEAN_SCAN_VERSION}"
+        # CLEAN_SCAN_VERSION=$(echo "${SCAN_VERSION}" | tr -cd '[:alnum:]-_')
+        # echo "Debug: SCAN_VERSION original: ${SCAN_VERSION}"
+        # echo "Debug: SCAN_VERSION limpo: ${CLEAN_SCAN_VERSION}"
 
         UPLOAD_URL="https://uploader-mvp.development.xguardianplatform.io/upload-url"
 
         # Limpa o APP_NAME também para garantir consistência
-        CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
+        # CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]-_')
 
         # XGB-1411 | Desativando o translate temporariamente
         # "translate": "${TRANSLATE}"
@@ -558,11 +558,11 @@ runs:
         )
 
         # Debug do payload formatado
-        echo "Debug: DATA (formatted):"
-        echo "${DATA}" | jq '.'
+        # echo "Debug: DATA (formatted):"
+        # echo "${DATA}" | jq '.'
 
         # Debug do payload original
-        echo "Debug: DATA (raw): ${DATA}"
+        # echo "Debug: DATA (raw): ${DATA}"
 
         GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
