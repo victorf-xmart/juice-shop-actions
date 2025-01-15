@@ -545,8 +545,8 @@ runs:
         # "translate": "${TRANSLATE}"
         DATA=$(cat << EOF
         {
-          "app_id": "${APP_ID}",
-          "scan_version": "${CLEAN_SCAN_VERSION}",
+          "app_id": ${APP_ID},
+          "scan_version": "${SCAN_VERSION}",
           "file_type": "application/zip",
           "sca": "${SCA}",
           "sast": "${SAST}",
@@ -558,13 +558,6 @@ runs:
         )
 
         echo "Debug: DATA (raw): ${DATA}"
-
-        # Debug do payload formatado
-        # echo "Debug: DATA (formatted):"
-        # echo "${DATA}" | jq '.'
-
-        # Debug do payload original
-        # echo "Debug: DATA (raw): ${DATA}"
 
         GET_UPLOAD_URL=$(curl -sS -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
