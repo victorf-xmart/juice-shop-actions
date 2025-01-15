@@ -552,7 +552,7 @@ runs:
           "sast": "${SAST}",
           "translate": "false", 
           "exclude": "${EXCLUDE}",
-          "pdf": "${PDF}",
+          "pdf": "${PDF}"
         }
         EOF
         )
