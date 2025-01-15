@@ -570,6 +570,8 @@ runs:
             -H "Authorization: Bearer ${API_TOKEN}" \
             -d "${DATA}" | jq -r '.url')
 
+        echo "Resposta completa da solicitação: ${GET_UPLOAD_URL}"
+
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
           echo "Erro: Não foi possível obter a URL de upload"
           exit 1
