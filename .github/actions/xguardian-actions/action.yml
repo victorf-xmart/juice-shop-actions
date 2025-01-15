@@ -68,17 +68,17 @@ inputs:
   # Seleção do tipo de scan (SAST e/ou SCA ou DAST)
   sast:
     description: "Vai ser realizado o scan SAST?"
-    default: '"false"'
+    default: "false"
     type: string
     required: false
   sca:
     description: "Vai ser realizado o scan SCA?"
-    default: '"false"'
+    default: "false"
     type: string
     required: false
   dast:
     description: "Vai ser realizado o scan DAST?"
-    default: '"false"'
+    default: "false"
     type: string
     required: false
 
