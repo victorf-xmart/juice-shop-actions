@@ -963,12 +963,14 @@ runs:
 
             if [ -z "$policy_critical" ] || [ -z "$policy_high" ] || [ -z "$policy_medium" ] || [ -z "$policy_low" ]; then
               echo "Políticas não definidas para ${scan_type^^}. Pulando verificação."
+              echo "::notice::Políticas não definidas para ${scan_type^^}. Vulnerabilidades encontradas: CRITICAL=$critical, HIGH=$high, MEDIUM=$medium, LOW=$low"
               return
             fi
 
+            echo "Políticas definidas para ${scan_type^^}: CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
+            echo "Vulnerabilidades encontradas para ${scan_type^^}: CRITICAL=$critical, HIGH=$high, MEDIUM=$medium, LOW=$low"
+
             if [ "$critical" -gt "$policy_critical" ] || [ "$high" -gt "$policy_high" ] || [ "$medium" -gt "$policy_medium" ] || [ "$low" -gt "$policy_low" ]; then
-              echo "Políticas definidas para ${scan_type^^}: CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
-              echo "Vulnerabilidades encontradas para ${scan_type^^}: CRITICAL=$critical, HIGH=$high, MEDIUM=$medium, LOW=$low"
               if [ "$pipeaction" == "fail" ]; then
                 echo "::error::Vulnerabilidades ${scan_type^^} excedem as políticas definidas."
                 exit 1
@@ -978,7 +980,7 @@ runs:
                 echo "::notice::Vulnerabilidades ${scan_type^^} excedem as políticas definidas, mas nenhuma ação foi tomada devido ao pipeaction definido como 'noAction'."
               fi
             else
-              echo "Vulnerabilidades ${scan_type^^} estão dentro das políticas definidas."
+              echo "::notice::Vulnerabilidades ${scan_type^^} estão dentro das políticas definidas."
             fi
           }
 
