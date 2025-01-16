@@ -475,7 +475,6 @@ runs:
         check_policies "dast" "${POLICY_DAST}"
 
     - name: Buscar políticas após criação da aplicação
-      if: false
       shell: bash
       env:
         API_TOKEN: ${{ env.API_TOKEN }}
