@@ -891,6 +891,9 @@ runs:
         SAST_PIPEACTION: ${{ env.SAST_PIPEACTION }}
         SCA_PIPEACTION: ${{ env.SCA_PIPEACTION }}
         DAST_PIPEACTION: ${{ env.DAST_PIPEACTION }}
+        POLICY_SAST: ${{ env.POLICY_SAST }}
+        POLICY_SCA: ${{ env.POLICY_SCA }}
+        POLICY_DAST: ${{ env.POLICY_DAST }}
       run: |
         fetch_vulnerabilities() {
           local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
@@ -960,6 +963,7 @@ runs:
             local policy_medium=$8
             local policy_low=$9
             local pipeaction=${10}
+            local policy_id=${11}
 
             if [ -z "$policy_critical" ] || [ -z "$policy_high" ] || [ -z "$policy_medium" ] || [ -z "$policy_low" ]; then
               echo "Políticas não definidas para ${scan_type^^}. Pulando verificação."
@@ -967,26 +971,26 @@ runs:
               return
             fi
 
-            echo "Políticas definidas para ${scan_type^^}: CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
+            echo "Políticas definidas para ${scan_type^^} (ID: $policy_id): CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
             echo "Vulnerabilidades encontradas para ${scan_type^^}: CRITICAL=$critical, HIGH=$high, MEDIUM=$medium, LOW=$low"
 
             if [ "$critical" -gt "$policy_critical" ] || [ "$high" -gt "$policy_high" ] || [ "$medium" -gt "$policy_medium" ] || [ "$low" -gt "$policy_low" ]; then
               if [ "$pipeaction" == "fail" ]; then
-                echo "::error::Vulnerabilidades ${scan_type^^} excedem as políticas definidas."
+                echo "::error::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
                 exit 1
               elif [ "$pipeaction" == "warn" ]; then
-                echo "::warning::Vulnerabilidades ${scan_type^^} excedem as políticas definidas."
+                echo "::warning::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
               else
-                echo "::notice::Vulnerabilidades ${scan_type^^} excedem as políticas definidas, mas nenhuma ação foi tomada devido ao pipeaction definido como 'noAction'."
+                echo "::notice::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id), mas nenhuma ação foi tomada devido ao pipeaction definido como 'noAction'."
               fi
             else
-              echo "::notice::Vulnerabilidades ${scan_type^^} estão dentro das políticas definidas."
+              echo "::notice::Vulnerabilidades ${scan_type^^} estão dentro das políticas definidas (ID: $policy_id)."
             fi
           }
 
-          check_vulnerabilities "sast" "$sast_critical" "$sast_high" "$sast_medium" "$sast_low" "$SAST_CRITICAL" "$SAST_HIGH" "$SAST_MEDIUM" "$SAST_LOW" "$SAST_PIPEACTION"
-          check_vulnerabilities "sca" "$sca_critical" "$sca_high" "$sca_medium" "$sca_low" "$SCA_CRITICAL" "$SCA_HIGH" "$SCA_MEDIUM" "$SCA_LOW" "$SCA_PIPEACTION"
-          check_vulnerabilities "dast" "$dast_critical" "$dast_high" "$dast_medium" "$dast_low" "$DAST_CRITICAL" "$DAST_HIGH" "$DAST_MEDIUM" "$DAST_LOW" "$DAST_PIPEACTION"
+          check_vulnerabilities "sast" "$sast_critical" "$sast_high" "$sast_medium" "$sast_low" "$SAST_CRITICAL" "$SAST_HIGH" "$SAST_MEDIUM" "$SAST_LOW" "$SAST_PIPEACTION" "$POLICY_SAST"
+          check_vulnerabilities "sca" "$sca_critical" "$sca_high" "$sca_medium" "$sca_low" "$SCA_CRITICAL" "$SCA_HIGH" "$SCA_MEDIUM" "$SCA_LOW" "$SCA_PIPEACTION" "$POLICY_SCA"
+          check_vulnerabilities "dast" "$dast_critical" "$dast_high" "$dast_medium" "$dast_low" "$DAST_CRITICAL" "$DAST_HIGH" "$DAST_MEDIUM" "$DAST_LOW" "$DAST_PIPEACTION" "$POLICY_DAST"
 
           echo "::notice::Todas as vulnerabilidades estão dentro das políticas definidas."
         }
