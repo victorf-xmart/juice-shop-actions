@@ -895,6 +895,27 @@ runs:
         POLICY_SCA: ${{ env.POLICY_SCA }}
         POLICY_DAST: ${{ env.POLICY_DAST }}
       run: |
+        check_scan_status() {
+          local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}")
+
+          if ! echo "$response" | jq . >/dev/null 2>&1; then
+            echo "Debug: Resposta não é um JSON válido:"
+            echo "$response"
+            return 1
+          fi
+
+          SCAN_STATUS=$(echo "$response" | jq -r --arg version "${SCAN_VERSION}" '.data[] | select(.scanuuid == $version) | .scan_status')
+
+          if [ -z "$SCAN_STATUS" ] || [ "$SCAN_STATUS" == "null" ]; then
+            echo "::error::Não foi possível obter o status do scan."
+            return 1
+          fi
+
+          echo "Status do scan: $SCAN_STATUS"
+        }
+
         fetch_vulnerabilities() {
           local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
             -H 'accept: application/json' \
@@ -995,7 +1016,18 @@ runs:
           echo "::notice::Todas as vulnerabilidades estão dentro das políticas definidas."
         }
 
-        fetch_vulnerabilities
+        while true; do
+          check_scan_status
+          if [ "$SCAN_STATUS" == "FINISHED" ]; then
+            echo "Scan finalizado. Aguardando 30 segundos antes de buscar vulnerabilidades..."
+            sleep 30
+            fetch_vulnerabilities
+            break
+          else
+            echo "Scan ainda não finalizado. Aguardando 30 segundos antes de verificar novamente..."
+            sleep 30
+          fi
+        done
 
     - name: Finalizar e validar outputs
       id: final_outputs
