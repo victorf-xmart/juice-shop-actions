@@ -293,10 +293,13 @@ runs:
           }' | jq -r '.token')
           
         if [ -n "$response" ] && [ "$response" != "null" ]; then
-          echo -n "$response" | grep -qE '^[a-zA-Z0-9]{64}$' || {
-            echo "::error::Token inválido ou não encontrado."
-            exit 1
-          }
+          echo "Resposta da API: $response"
+
+          # echo -n "$response" | grep -qE '^[a-zA-Z0-9]{64}$' || {
+          #   echo "::error::Token inválido ou não encontrado."
+          #   exit 1
+          # }
+          
           echo "API_TOKEN=$response" >> $GITHUB_ENV
           echo "Token atualizado com sucesso."
         else
