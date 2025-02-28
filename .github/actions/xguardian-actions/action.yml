@@ -356,28 +356,10 @@ runs:
           -H 'Content-Type: application/json' \
           -d "${DATA}")
 
-        # Tentar extrair app_id do response
-        APP_ID=$(echo "$RESPONSE" | jq -r '.app_id')
-
-        if [ "$APP_ID" != "null" ] && [ ! -z "$APP_ID" ]; then
-          echo "Aplicação criada com sucesso. APP_ID: $APP_ID"
-          echo "APP_ID=$APP_ID" >> $GITHUB_ENV
-
-          POLICY_SAST=$(echo "$RESPONSE" | jq -r '.policies_id_sast')
-          POLICY_SCA=$(echo "$RESPONSE" | jq -r '.policies_id_sca')
-          POLICY_DAST=$(echo "$RESPONSE" | jq -r '.policies_id_dast')
-
-          if [ -n "$POLICY_SAST" ]; then
-            echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
-          fi
-
-          if [ -n "$POLICY_SCA" ]; then
-            echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
-          fi
-
-          if [ -n "$POLICY_DAST" ]; then
-            echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
-          fi
+        # Verificar se a resposta contém a mensagem de sucesso
+        if echo "$RESPONSE" | grep -q '"sucess":"Aplicação'; then
+          echo "Aplicação criada com sucesso."
+          echo "APP_ID=N/A" >> $GITHUB_ENV
         else
           ERROR_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
           ERROR_DETAIL=$(echo "$RESPONSE" | jq -r '.detail // empty')
