@@ -333,7 +333,9 @@ runs:
         # Converte caracteres especiais para espaços, mantendo espaços existentes
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
 
-        CREATE_APP_URL="{$UPLOADER_URL}/create_app"
+        # Alteração para `create_apps` por conta da remoção de políticas do payload
+        # "${UPLOADER_URL}/docs#/apps/create_app_create_apps_post"
+        CREATE_APP_URL="{$UPLOADER_URL}/create_apps"
 
         DATA=$(cat << EOF
         {
@@ -341,11 +343,6 @@ runs:
           "team_id": ${TEAM_ID},
           "languages": ${LANGUAGES},
           "description": "${DESCRIPTION}",
-          "policy": 0,
-          "policy_sast": ${POLICY_SAST},
-          "policy_sca": ${POLICY_SCA},
-          "policy_dast": ${POLICY_DAST},
-          "policy_container": 0,
           "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
           $([[ "${MICROSERVICES}" == "true" ]] && echo ',
           "microservices_data": ${MICROSERVICES_DATA}')
