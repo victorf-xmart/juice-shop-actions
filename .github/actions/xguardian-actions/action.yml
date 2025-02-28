@@ -1021,8 +1021,7 @@ runs:
             local policy_id=${11}
 
             if [ -z "$policy_critical" ] || [ -z "$policy_high" ] || [ -z "$policy_medium" ] || [ -z "$policy_low" ]; then
-              echo "Políticas não definidas para ${scan_type^^}. Pulando verificação."
-              echo "::notice::Políticas não definidas para ${scan_type^^}. Vulnerabilidades encontradas: CRITICAL=$critical, HIGH=$high, MEDIUM=$medium, LOW=$low"
+               echo "Políticas não definidas para ${scan_type^^}. Pulando verificação."
               return
             fi
 
