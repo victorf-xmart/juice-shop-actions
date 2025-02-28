@@ -542,7 +542,7 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         API_TOKEN: ${{ inputs.api_token }}
       run: |
-        UPLOAD_URL="${UPLOADER_URL]/upload-url"
+        UPLOAD_URL="${UPLOADER_URL}/upload-url"
 
         DATA=$(cat << EOF
         {
