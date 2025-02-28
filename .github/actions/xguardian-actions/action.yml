@@ -425,8 +425,8 @@ runs:
           local scan_type=$1
           local app_policy_id=$2
 
-          if [ "$app_policy_id" == "null" ]; then
-            echo "Política para ${scan_type} é null, pulando para o próximo step."
+          if [ -z "$app_policy_id" ] || [ "$app_policy_id" == "null" ]; then
+            echo "Política para ${scan_type} é null ou vazia, pulando para o próximo step."
             return
           fi
 
@@ -440,7 +440,10 @@ runs:
           }
 
           local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == ($id | tonumber))')
-          echo "$policy" | jq '.'
+          echo "$policy" | jq '.' || {
+            echo "::error::Política atribuída para ${scan_type} não encontrada: $app_policy_id"
+            exit 1
+          }
 
           if [ -z "$policy" ]; then
             echo "::error::Política atribuída para ${scan_type} não encontrada: $app_policy_id"
