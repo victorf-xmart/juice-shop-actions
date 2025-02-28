@@ -20,6 +20,7 @@ jobs:
           api_password: ${{ secrets.API_PASSWORD }}
           api_token: ${{ secrets.API_TOKEN }}
           gh_token: ${{ secrets.GH_TOKEN }}
+          is_development: "true"
           app_name: "nome-da-aplicacao"
           team_id: "[1115]"
           # dast: "true"

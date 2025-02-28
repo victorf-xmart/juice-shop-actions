@@ -136,6 +136,13 @@ inputs:
     type: string
     required: false
 
+  # Configurações caso o ambiente seja de desenvolvimento
+  is_development:
+    description: "O ambiente é de desenvolvimento?"
+    default: "false"
+    type: string
+    required: false
+
   # Configurações opcionais (caso o usuário deseje)
   scan_directory:
     description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
@@ -168,6 +175,22 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Definir URLs do XGuardian
+      id: set-urls
+      shell: bash
+      run: |
+        if [ "${{ inputs.is_development }}" == "true" ]; then
+          echo "BASE_URL"="https://shield.development.xguardianplatform.io" >> $GITHUB_ENV
+          echo "UPLOADER_URL=https://uploader-mvp.development.xguardianplatform.io" >> $GITHUB_ENV
+          echo "REPORTER_URL=https://reporter.development.xguardianplatform.io" >> $GITHUB_ENV
+          echo "AUTH_URL=https://auth.development.xguardianplatform.io" >> $GITHUB_ENV
+        else
+          echo "BASE_URL"="https://shield.xguardianplatform.io" >> $GITHUB_ENV
+          echo "UPLOADER_URL=https://uploader-mvp.xguardianplatform.io" >> $GITHUB_ENV
+          echo "REPORTER_URL=https://reporter.xguardianplatform.io" >> $GITHUB_ENV
+          echo "AUTH_URL=https://auth.xguardianplatform.io" >> $GITHUB_ENV
+        fi
+
     - name: Validando inputs sensíveis
       shell: bash
       env:
@@ -211,6 +234,7 @@ runs:
     - name: Validar e renovar token se necessário
       shell: bash
       env:
+        AUTH_URL: ${{ env.AUTH_URL }}
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
         API_TOKEN: ${{ inputs.api_token }}
@@ -218,8 +242,8 @@ runs:
         set -e
 
         renew_token() {
-          echo "Renovando token..."
-          response=$(curl -s -X POST 'https://auth.development.xguardianplatform.io/login' \
+            echo "Renovando token..."
+            response=$(curl -s -X POST "${AUTH_URL}/login" \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
             -d '{"email": "'${API_EMAIL}'", "password": "'${API_PASSWORD}'"}' | jq -r '.token')
@@ -235,7 +259,7 @@ runs:
         }
 
         echo "Verificando validade do token..."
-        test_response=$(curl -s -X GET 'https://auth.development.xguardianplatform.io/ping' \
+        test_response=$(curl -s -X GET "${AUTH_URL}/ping" \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -265,6 +289,7 @@ runs:
     - name: Fazer login na API e armazenar o token
       shell: bash
       env:
+        AUTH_URL: ${{ env.AUTH_URL }}
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
         GITHUB_TOKEN: ${{ inputs.gh_token }}
@@ -274,7 +299,7 @@ runs:
         echo "Debug: API_PASSWORD: ${API_PASSWORD}"
 
         # Gera um novo token
-        response=$(curl -X 'POST' 'https://auth.development.xguardianplatform.io/login' \
+        response=$(curl -X 'POST' "${AUTH_URL}/login" \
           -H 'accept: application/json' \
           -H 'Content-Type: application/json' \
           -d '{
@@ -294,6 +319,7 @@ runs:
     - name: Verificar se a aplicação existe, caso contrário, cria a aplicação
       shell: bash
       env:
+        UPLOADER_URL: ${{ env.UPLOADER_URL }}
         APP_NAME: ${{ inputs.app_name }}
         TEAM_ID: ${{ inputs.team_id }}
         LANGUAGES: ${{ inputs.languages }}
@@ -307,7 +333,7 @@ runs:
         # Converte caracteres especiais para espaços, mantendo espaços existentes
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
 
-        CREATE_APP_URL="https://uploader-mvp.development.xguardianplatform.io/create_app"
+        CREATE_APP_URL="{$UPLOADER_URL}/create_app"
 
         DATA=$(cat << EOF
         {
@@ -363,7 +389,7 @@ runs:
             echo "A aplicação já existe. Buscando o APP_ID existente..."
             # Buscar o APP_ID da aplicação existente
             EXISTING_APP=$(curl -sS -X GET \
-              'https://uploader-mvp.development.xguardianplatform.io/get_apps_total' \
+              "${UPLOADER_URL}/get_apps_total" \
               -H 'accept: application/json' \
               -H "Authorization: Bearer ${API_TOKEN}" )
             
@@ -410,6 +436,7 @@ runs:
     - name: Verificar políticas definidas
       shell: bash
       env:
+        AUTH_URL: ${{ env.AUTH_URL }}
         API_TOKEN: ${{ env.API_TOKEN }}
         POLICY_SAST: "${{ env.POLICY_SAST }}"
         POLICY_SCA: "${{ env.POLICY_SCA }}"
@@ -424,7 +451,7 @@ runs:
             return
           fi
 
-          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
+          local response=$(curl -s -X GET "${AUTH_URL}/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -477,12 +504,13 @@ runs:
     - name: Buscar políticas após criação da aplicação
       shell: bash
       env:
+        AUTH_URL: ${{ env.AUTH_URL }}
         API_TOKEN: ${{ env.API_TOKEN }}
         APP_ID: ${{ env.APP_ID }}
       run: |
         fetch_policies() {
           local scan_type=$1
-          local response=$(curl -s -X GET "https://auth.development.xguardianplatform.io/get_policies_${scan_type}" \
+          local response=$(curl -s -X GET "${AUTH_URL}/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -522,6 +550,7 @@ runs:
       if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
       shell: bash
       env:
+        UPLOADER_URL: ${{ env.UPLOADER_URL }}
         APP_ID: ${{ env.APP_ID }}
         SAST: ${{ inputs.sast }}
         SCA: ${{ inputs.sca }}
@@ -531,7 +560,7 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         API_TOKEN: ${{ inputs.api_token }}
       run: |
-        UPLOAD_URL="https://uploader-mvp.development.xguardianplatform.io/upload-url"
+        UPLOAD_URL="${UPLOADER_URL]/upload-url"
 
         DATA=$(cat << EOF
         {
@@ -571,6 +600,7 @@ runs:
       if: ${{ inputs.dast == 'true' }}
       shell: bash
       env:
+        UPLOADER_URL: ${{ env.UPLOADER_URL }}
         API_TOKEN: ${{ inputs.api_token }}
         APP_ID: ${{ env.APP_ID }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
@@ -583,7 +613,7 @@ runs:
         TRANSLATE: ${{ inputs.translate }}
         PDF: ${{ inputs.pdf }}
       run: |
-        UPLOAD_DAST_URL="https://uploader-mvp.development.xguardianplatform.io/upload-dast"
+        UPLOAD_DAST_URL="${UPLOADER_URL}/upload-dast"
 
         DATA=$(cat << EOF
         {
@@ -725,6 +755,8 @@ runs:
       shell: bash
       if: ${{ inputs.get_scan_id == 'true' }}
       env:
+        BASE_URL: ${{ env.BASE_URL }}
+        REPORTER_URL: ${{ env.REPORTER_URL }}
         APP_ID: ${{ env.APP_ID }}
         API_TOKEN: ${{ inputs.api_token }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
@@ -734,7 +766,7 @@ runs:
         echo "Debug: APP_ID: ${APP_ID}"
 
         # URL da API (apenas primeira página)
-        API_URL="https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
+        API_URL="${REPORTER_URL}/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
         echo "Debug: URL da API: ${API_URL}"
 
         # Tenta obter o scan ID por até 5 minutos (30 tentativas, 10 segundos cada)
@@ -776,7 +808,7 @@ runs:
               {
                 echo "APP_ID=${APP_ID}"
                 echo "SCAN_ID=${SCAN_ID}"
-                echo "SCAN_URL=https://shield.development.xguardianplatform.io/aplicacoes/${APP_ID}/scans"
+                echo "SCAN_URL=${BASE_URL}/aplicacoes/${APP_ID}/scans"
               } >> "$GITHUB_ENV"
               
               # Cria arquivo de estado com os dados
@@ -815,6 +847,7 @@ runs:
     - name: Aguardar finalização do scan
       shell: bash
       env:
+        REPORTER_URL: ${{ env.REPORTER_URL }}
         API_TOKEN: ${{ inputs.api_token }}
         APP_ID: ${{ env.APP_ID }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
@@ -822,7 +855,7 @@ runs:
         SCAN_STATUS=""
 
         check_scan_status() {
-          local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
+          local response=$(curl -s -X GET "${REPORTER_URL}/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -870,6 +903,7 @@ runs:
     - name: Buscar vulnerabilidades e comparar com políticas
       shell: bash
       env:
+        REPORTER_URL: ${{ env.REPORTER_URL }}
         API_TOKEN: ${{ inputs.api_token }}
         APP_ID: ${{ env.APP_ID }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
@@ -896,7 +930,7 @@ runs:
         POLICY_DAST: ${{ env.POLICY_DAST }}
       run: |
         check_scan_status() {
-          local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
+          local response=$(curl -s -X GET "${REPORTER_URL}/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -917,7 +951,7 @@ runs:
         }
 
         fetch_vulnerabilities() {
-          local response=$(curl -s -X GET "https://reporter.development.xguardianplatform.io/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
+          local response=$(curl -s -X GET "${REPORTER_URL}/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
@@ -1032,6 +1066,8 @@ runs:
     - name: Finalizar e validar outputs
       id: final_outputs
       shell: bash
+      env:
+        BASE_URL: ${{ env.BASE_URL }}
       if: ${{ inputs.get_scan_id == 'true' }}
       run: |
         if [ ! -f "/tmp/xguardian_scan_complete" ] || [ ! -s "/tmp/xguardian_scan_complete" ]; then
@@ -1051,29 +1087,30 @@ runs:
         # Define os outputs corretamente
         echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
         echo "scan_id=$scan_id" >> "$GITHUB_OUTPUT"
-        echo "scan_url=https://shield.development.xguardianplatform.io/aplicacoes/$app_id/scans" >> "$GITHUB_OUTPUT"
+        echo "scan_url=${BASE_URL}/aplicacoes/$app_id/scans" >> "$GITHUB_OUTPUT"
 
         # Define também no ambiente para compatibilidade
         {
           echo "APP_ID=$app_id"
           echo "SCAN_ID=$scan_id"
-          echo "SCAN_URL=https://shield.development.xguardianplatform.io/aplicacoes/$app_id/scans"
+          echo "SCAN_URL=${BASE_URL}/aplicacoes/$app_id/scans"
         } >> "$GITHUB_ENV"
 
         # Log para debug
         echo "Debug: Outputs definidos"
         echo "app_id: $app_id"
         echo "scan_id: $scan_id"
-        echo "scan_url: https://shield.development.xguardianplatform.io/aplicacoes/$app_id/scans"
+        echo "scan_url: ${BASE_URL}/aplicacoes/$app_id/scans"
 
     - name: Salvar vulnerabilidades no banco de dados
       if: ${{ inputs.save_vulns == 'true' }}
       shell: bash
       env:
+        UPLOADER_URL: ${{ env.UPLOADER_URL }}
         APP_ID: ${{ env.APP_ID }}
         API_TOKEN: ${{ inputs.api_token }}
       run: |
-        PATCH_URL="https://uploader-mvp.development.xguardianplatform.io/accept_save_vulns"
+        PATCH_URL="${UPLOADER_URL}/accept_save_vulns"
         DATA=$(cat << EOF
         {
           "app_id": ${APP_ID},
