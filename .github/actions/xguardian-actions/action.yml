@@ -20,9 +20,6 @@ inputs:
   api_token:
     description: "O token de autenticação obtido durante o login."
     required: true
-  gh_token:
-    description: "Token de acesso ao Github necessário para utilizar o comando gh CLI."
-    required: true
 
   # Nome da aplicação (default: nome do repositório)
   # Usado para criar a aplicação no XGuardian
@@ -197,12 +194,10 @@ runs:
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
         API_TOKEN: ${{ inputs.api_token }}
-        GH_TOKEN: ${{ inputs.gh_token }}
       run: |
         echo "API_EMAIL: $API_EMAIL"
         echo "API_PASSWORD: $API_PASSWORD"
         echo "API_TOKEN: $API_TOKEN"
-        echo "GH_TOKEN: $GH_TOKEN"
 
         # Validar formato de email
         if [[ ! "$API_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
@@ -214,12 +209,6 @@ runs:
         PASSWORD_LENGTH=$(echo -n "$API_PASSWORD" | wc -c)
         if [ $PASSWORD_LENGTH -lt 8 ]; then
           echo "::error::Senha deve ter pelo menos 8 caracteres"
-          exit 1
-        fi
-
-        # Validar formato do GH Token (fine-grained)
-        if [[ ! "$GH_TOKEN" =~ ^github_pat_[A-Za-z0-9_]{0,255}$ ]]; then
-          echo "::error::O token deve ser um GitHub fine-grained PAT (começando com 'github_pat_')"
           exit 1
         fi
 
@@ -271,8 +260,6 @@ runs:
 
     - name: Instalar dependências
       shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.gh_token }}
       run: |
         echo "Atualizando pacotes..."
         sudo apt-get update
@@ -284,7 +271,6 @@ runs:
         && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
         && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
         && sudo apt update \
-        && sudo apt install gh -y
 
     - name: Fazer login na API e armazenar o token
       shell: bash
@@ -292,11 +278,10 @@ runs:
         AUTH_URL: ${{ env.AUTH_URL }}
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
-        GITHUB_TOKEN: ${{ inputs.gh_token }}
       run: |
         # Remover ou comentar estes logs de debug em produção
-        echo "Debug: API_EMAIL: ${API_EMAIL}"
-        echo "Debug: API_PASSWORD: ${API_PASSWORD}"
+        # echo "Debug: API_EMAIL: ${API_EMAIL}"
+        # echo "Debug: API_PASSWORD: ${API_PASSWORD}"
 
         # Gera um novo token
         response=$(curl -X 'POST' "${AUTH_URL}/login" \
@@ -308,7 +293,10 @@ runs:
           }' | jq -r '.token')
           
         if [ -n "$response" ] && [ "$response" != "null" ]; then
-          echo -n "$response" | gh secret set API_TOKEN
+          echo -n "$response" | grep -qE '^[a-zA-Z0-9]{64}$' || {
+            echo "::error::Token inválido ou não encontrado."
+            exit 1
+          }
           echo "API_TOKEN=$response" >> $GITHUB_ENV
           echo "Token atualizado com sucesso."
         else
