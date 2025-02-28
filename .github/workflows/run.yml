@@ -1,4 +1,4 @@
-name: Security Scan
+name: Security Scan # commit v1.0.0
 on:
   push:
     branches:
