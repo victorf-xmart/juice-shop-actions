@@ -549,7 +549,7 @@ runs:
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
-          APP_ID=$(echo "$RESPONSE" | jq -r --arg NAME "${{ inputs.app_name }}" '.data[] | select(.name == $NAME) | .id')
+          APP_ID=$(echo "$RESPONSE" | jq -r --arg NAME "${{ inputs.app_name }}" '.data[] | select(.name == $NAME) | .id' | head -n 1)
 
           if [ -z "$APP_ID" ]; then
             echo "::error::Não foi possível encontrar o APP_ID para a aplicação ${inputs.app_name}"
