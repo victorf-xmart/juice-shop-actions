@@ -284,33 +284,38 @@ runs:
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
       run: |
-        # Remover ou comentar estes logs de debug em produção
-        # echo "Debug: API_EMAIL: ${API_EMAIL}"
-        # echo "Debug: API_PASSWORD: ${API_PASSWORD}"
-
-        # Gera um novo token
-        response=$(curl -X 'POST' "${AUTH_URL}/login" \
-          -H 'accept: application/json' \
-          -H 'Content-Type: application/json' \
-          -d '{
-            "email": "'"${API_EMAIL}"'",
-            "password": "'"${API_PASSWORD}"'"
-          }' | jq -r '.token')
+        # Função para fazer login com retry
+        login_with_retry() {
+          local max_attempts=3
+          local attempt=1
           
-        if [ -n "$response" ] && [ "$response" != "null" ]; then
-          echo "Resposta da API: $response"
-
-          # echo -n "$response" | grep -qE '^[a-zA-Z0-9]{64}$' || {
-          #   echo "::error::Token inválido ou não encontrado."
-          #   exit 1
-          # }
+          while [ $attempt -le $max_attempts ]; do
+            echo "Tentativa $attempt de $max_attempts para obter token..."
+            
+            response=$(curl -X 'POST' "${AUTH_URL}/login" \
+              -H 'accept: application/json' \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "email": "'"${API_EMAIL}"'",
+                "password": "'"${API_PASSWORD}"'"
+              }' | jq -r '.token')
+              
+            if [ -n "$response" ] && [ "$response" != "null" ]; then
+              echo "API_TOKEN=$response" >> $GITHUB_ENV
+              echo "Token atualizado com sucesso."
+              return 0
+            fi
+            
+            echo "Falha na tentativa $attempt. Aguardando antes de tentar novamente..."
+            sleep $(( attempt * 5 ))
+            attempt=$((attempt+1))
+          done
           
-          echo "API_TOKEN=$response" >> $GITHUB_ENV
-          echo "Token atualizado com sucesso."
-        else
-          echo "::error::Não foi possível obter o token de autenticação."
+          echo "::error::Todas as tentativas de login falharam."
           exit 1
-        fi
+        }
+
+        login_with_retry
 
     - name: Verificar se a aplicação existe, caso contrário, cria a aplicação
       shell: bash
@@ -332,7 +337,7 @@ runs:
 
         # Alteração para `create_apps` por conta da remoção de políticas do payload
         # "${UPLOADER_URL}/docs#/apps/create_app_create_apps_post"
-        CREATE_APP_URL="{$UPLOADER_URL}/create_apps"
+        CREATE_APP_URL="${UPLOADER_URL}/create_apps"
 
         DATA=$(cat << EOF
         {
