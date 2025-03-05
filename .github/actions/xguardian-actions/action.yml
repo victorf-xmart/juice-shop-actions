@@ -959,10 +959,11 @@ runs:
         compare_vulnerabilities() {
           local scan_data=$1
 
-          local sast_critical=$(echo "$scan_data" | jq -r '.sast_critical // 0')
-          local sast_high=$(echo "$scan_data" | jq -r '.sast_high // 0')
-          local sast_medium=$(echo "$scan_data" | jq -r '.sast_medium // 0')
-          local sast_low=$(echo "$scan_data" | jq -r '.sast_low // 0')
+          # scan_${severity} = SAST
+          local sast_critical=$(echo "$scan_data" | jq -r '.scan_critical // 0') 
+          local sast_high=$(echo "$scan_data" | jq -r '.scan_high // 0') 
+          local sast_medium=$(echo "$scan_data" | jq -r '.scan_medium // 0') 
+          local sast_low=$(echo "$scan_data" | jq -r '.scan_low // 0') 
 
           local sca_critical=$(echo "$scan_data" | jq -r '.sca_critical // 0')
           local sca_high=$(echo "$scan_data" | jq -r '.sca_high // 0')
