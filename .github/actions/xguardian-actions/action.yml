@@ -1003,12 +1003,18 @@ runs:
             local policy_id=${11}
 
             if [ -z "$policy_critical" ] || [ -z "$policy_high" ] || [ -z "$policy_medium" ] || [ -z "$policy_low" ]; then
-               echo "Políticas não definidas para ${scan_type^^}. Pulando verificação."
               return
             fi
 
             echo "Políticas definidas para ${scan_type^^} (ID: $policy_id): CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
-            echo "Vulnerabilidades encontradas para ${scan_type^^}: CRITICAL=$critical, HIGH=$high, MEDIUM=$medium, LOW=$low"
+
+            if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ] || [ "$medium" -gt 0 ] || [ "$low" -gt 0 ]; then
+              echo "Vulnerabilidades encontradas para ${scan_type^^}:"
+              [ "$critical" -gt 0 ] && echo "CRITICAL=$critical"
+              [ "$high" -gt 0 ] && echo "HIGH=$high"
+              [ "$medium" -gt 0 ] && echo "MEDIUM=$medium"
+              [ "$low" -gt 0 ] && echo "LOW=$low"
+            fi
 
             if [ "$critical" -gt "$policy_critical" ] || [ "$high" -gt "$policy_high" ] || [ "$medium" -gt "$policy_medium" ] || [ "$low" -gt "$policy_low" ]; then
               if [ "$pipeaction" == "fail" ]; then
