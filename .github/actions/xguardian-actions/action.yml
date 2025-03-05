@@ -144,7 +144,7 @@ inputs:
     required: false
   get_scan_id:
     description: "Deseja buscar o ID do Scan após o upload?"
-    default: '"false"'
+    default: "false"
     type: string
     required: false
   save_vulns:
@@ -208,6 +208,23 @@ runs:
         fi
 
         echo "Todos os inputs sensíveis são válidos."
+
+    - name: Validar tipos de scan
+      shell: bash
+      env:
+        SAST: ${{ inputs.sast }}
+        SCA: ${{ inputs.sca }}
+        DAST: ${{ inputs.dast }}
+      run: |
+        if [ "${SAST}" != "true" ] && [ "${SCA}" != "true" ] && [ "${DAST}" != "true" ]; then
+          echo "::error::Pelo menos um tipo de scan (SAST, SCA ou DAST) deve estar habilitado."
+          exit 1
+        fi
+
+        if [ "${DAST}" == "true" ] && [ -z "${{ inputs.site_url }}" ]; then
+          echo "::error::site_url é obrigatório quando o scan DAST está habilitado."
+          exit 1
+        fi
 
     - name: Validar e renovar token se necessário
       shell: bash
