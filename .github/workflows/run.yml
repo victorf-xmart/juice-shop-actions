@@ -1,4 +1,4 @@
-name: Security Scan # commit test v1.0.1 - Testando sem GH_TOKEN
+name: Security Scan # commit test v1.0.2 - Que erro tá dando na rota get_apps_new ?
 on:
   push:
     branches:
