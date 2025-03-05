@@ -540,6 +540,8 @@ runs:
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
+          echo "Debug: Resposta da API: $RESPONSE"
+
           APP_ID=$(echo "$RESPONSE" | jq -r --arg NAME "${{ inputs.app_name }}" '.data[] | select(.name == $NAME) | .id' | head -n 1)
 
           if [ -z "$APP_ID" ]; then
