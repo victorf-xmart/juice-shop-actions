@@ -17,9 +17,6 @@ inputs:
   api_password:
     description: "A senha para login/autenticação na API."
     required: true
-  api_token:
-    description: "O token de autenticação obtido durante o login."
-    required: true
 
   # Nome da aplicação (default: nome do repositório)
   # Usado para criar a aplicação no XGuardian
@@ -188,16 +185,14 @@ runs:
           echo "AUTH_URL=https://auth.xguardianplatform.io" >> $GITHUB_ENV
         fi
 
-    - name: Validando inputs sensíveis
+    - name: Validando input secrets de email e senha
       shell: bash
       env:
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
-        API_TOKEN: ${{ inputs.api_token }}
       run: |
         echo "API_EMAIL: $API_EMAIL"
         echo "API_PASSWORD: $API_PASSWORD"
-        echo "API_TOKEN: $API_TOKEN"
 
         # Validar formato de email
         if [[ ! "$API_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
@@ -212,12 +207,6 @@ runs:
           exit 1
         fi
 
-        # Validar API Token
-        if [ -z "$API_TOKEN" ]; then
-          echo "::error::API token não pode estar vazio"
-          exit 1
-        fi
-
         echo "Todos os inputs sensíveis são válidos."
 
     - name: Validar e renovar token se necessário
@@ -226,7 +215,6 @@ runs:
         AUTH_URL: ${{ env.AUTH_URL }}
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
-        API_TOKEN: ${{ inputs.api_token }}
       run: |
         set -e
 
