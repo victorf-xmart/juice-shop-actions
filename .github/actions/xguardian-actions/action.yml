@@ -544,6 +544,16 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         API_TOKEN: ${{ env.API_TOKEN }}
       run: |
+        echo "::group::Preparando scan SAST/SCA"
+        echo "Configurando scan com as seguintes opções:"
+        echo "- APP_ID: ${APP_ID}"
+        echo "- SCAN_VERSION: ${SCAN_VERSION}"
+        echo "- SAST: ${SAST}"
+        echo "- SCA: ${SCA}"
+        echo "- TRANSLATE: ${TRANSLATE}"
+        echo "- PDF: ${PDF}"
+        echo "::endgroup::"        
+
         # Verificar se o APP_ID é N/A e buscar o ID correto
         if [ "${APP_ID}" = "N/A" ]; then
           echo "APP_ID é N/A, buscando o ID correto..."
