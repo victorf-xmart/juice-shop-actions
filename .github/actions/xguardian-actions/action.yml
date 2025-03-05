@@ -959,11 +959,10 @@ runs:
         compare_vulnerabilities() {
           local scan_data=$1
 
-          # scan_${severity} = SAST
-          local sast_critical=$(echo "$scan_data" | jq -r '.scan_critical // 0') 
-          local sast_high=$(echo "$scan_data" | jq -r '.scan_high // 0') 
-          local sast_medium=$(echo "$scan_data" | jq -r '.scan_medium // 0') 
-          local sast_low=$(echo "$scan_data" | jq -r '.scan_low // 0') 
+          local sast_critical=$(echo "$scan_data" | jq -r '.scan_critical // 0')
+          local sast_high=$(echo "$scan_data" | jq -r '.scan_high // 0')
+          local sast_medium=$(echo "$scan_data" | jq -r '.scan_medium // 0')
+          local sast_low=$(echo "$scan_data" | jq -r '.scan_low // 0')
 
           local sca_critical=$(echo "$scan_data" | jq -r '.sca_critical // 0')
           local sca_high=$(echo "$scan_data" | jq -r '.sca_high // 0')
@@ -1004,6 +1003,11 @@ runs:
             local policy_id=${11}
 
             if [ -z "$policy_critical" ] || [ -z "$policy_high" ] || [ -z "$policy_medium" ] || [ -z "$policy_low" ]; then
+              return
+            fi
+
+            if [ "$policy_critical" -eq 0 ] && [ "$policy_high" -eq 0 ] && [ "$policy_medium" -eq 0 ] && [ "$policy_low" -eq 0 ]; then
+              echo "Política para ${scan_type^^} não definida."
               return
             fi
 
