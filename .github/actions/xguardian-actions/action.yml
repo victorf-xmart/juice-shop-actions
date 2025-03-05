@@ -300,6 +300,7 @@ runs:
       env:
         UPLOADER_URL: ${{ env.UPLOADER_URL }}
         APP_NAME: ${{ inputs.app_name }}
+        API_TOKEN: ${{ env.API_TOKEN }}
         TEAM_ID: ${{ inputs.team_id }}
         LANGUAGES: ${{ inputs.languages }}
         DESCRIPTION: ${{ inputs.description }}
@@ -519,7 +520,7 @@ runs:
         EXCLUDE: ${{ inputs.exclude }}
         PDF: ${{ inputs.pdf }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
-        API_TOKEN: ${{ inputs.api_token }}
+        API_TOKEN: ${{ env.API_TOKEN }}
       run: |
         # Verificar se o APP_ID é N/A e buscar o ID correto
         if [ "${APP_ID}" = "N/A" ]; then
@@ -582,7 +583,7 @@ runs:
       shell: bash
       env:
         UPLOADER_URL: ${{ env.UPLOADER_URL }}
-        API_TOKEN: ${{ inputs.api_token }}
+        API_TOKEN: ${{ env.API_TOKEN }}
         APP_ID: ${{ env.APP_ID }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         SITE_URL: ${{ inputs.site_url }}
@@ -739,7 +740,7 @@ runs:
         BASE_URL: ${{ env.BASE_URL }}
         REPORTER_URL: ${{ env.REPORTER_URL }}
         APP_ID: ${{ env.APP_ID }}
-        API_TOKEN: ${{ inputs.api_token }}
+        API_TOKEN: ${{ env.API_TOKEN }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
@@ -829,7 +830,7 @@ runs:
       shell: bash
       env:
         REPORTER_URL: ${{ env.REPORTER_URL }}
-        API_TOKEN: ${{ inputs.api_token }}
+        API_TOKEN: ${{ env.API_TOKEN }}
         APP_ID: ${{ env.APP_ID }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
       run: |
@@ -885,7 +886,7 @@ runs:
       shell: bash
       env:
         REPORTER_URL: ${{ env.REPORTER_URL }}
-        API_TOKEN: ${{ inputs.api_token }}
+        API_TOKEN: ${{ env.API_TOKEN }}
         APP_ID: ${{ env.APP_ID }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         SAST_CRITICAL: ${{ env.SAST_CRITICAL }}
@@ -1088,7 +1089,7 @@ runs:
       env:
         UPLOADER_URL: ${{ env.UPLOADER_URL }}
         APP_ID: ${{ env.APP_ID }}
-        API_TOKEN: ${{ inputs.api_token }}
+        API_TOKEN: ${{ env.API_TOKEN }}
       run: |
         PATCH_URL="${UPLOADER_URL}/accept_save_vulns"
         DATA=$(cat << EOF
