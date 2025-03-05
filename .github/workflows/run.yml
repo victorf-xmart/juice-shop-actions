@@ -1,4 +1,4 @@
-name: Security Scan # commit v1.0.0
+name: Security Scan # commit test v1.0.1 - Testando sem GH_TOKEN
 on:
   push:
     branches:
@@ -19,7 +19,6 @@ jobs:
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
           api_token: ${{ secrets.API_TOKEN }}
-          gh_token: ${{ secrets.GH_TOKEN }}
           is_development: "true"
           app_name: "nome-da-aplicacao"
           team_id: "[1159]"
