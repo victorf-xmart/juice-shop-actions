@@ -342,15 +342,18 @@ runs:
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
       run: |
+        echo "::group::Autenticação na API XGuardian"
+        echo "🔐 Iniciando processo de autenticação..."
+
         # Função para fazer login com retry
         login_with_retry() {
           local max_attempts=3
           local attempt=1
           
           while [ $attempt -le $max_attempts ]; do
-            echo "Tentativa $attempt de $max_attempts para obter token..."
+            echo "🔄 Tentativa $attempt de $max_attempts para obter token..."
             
-            response=$(curl -X 'POST' "${AUTH_URL}/login" \
+            response=$(curl -s -X 'POST' "${AUTH_URL}/login" \
               -H 'accept: application/json' \
               -H 'Content-Type: application/json' \
               -d '{
@@ -360,20 +363,21 @@ runs:
               
             if [ -n "$response" ] && [ "$response" != "null" ]; then
               echo "API_TOKEN=$response" >> $GITHUB_ENV
-              echo "Token atualizado com sucesso."
+              echo "✅ Token obtido com sucesso!"
               return 0
             fi
             
-            echo "Falha na tentativa $attempt. Aguardando antes de tentar novamente..."
+            echo "⚠️ Falha na tentativa $attempt. Aguardando antes de tentar novamente..."
             sleep $(( attempt * 5 ))
             attempt=$((attempt+1))
           done
           
-          echo "::error::Todas as tentativas de login falharam."
+          echo "::error::❌ Todas as tentativas de login falharam. Verifique suas credenciais ou a disponibilidade da API."
           exit 1
         }
 
         login_with_retry
+        echo "::endgroup::"
 
     - name: Verificar se a aplicação existe, caso contrário, cria a aplicação
       shell: bash
