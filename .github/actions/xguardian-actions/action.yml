@@ -233,6 +233,7 @@ runs:
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
       run: |
+        echo "::group::Validação de token de API"
         set -e
 
         renew_token() {
@@ -261,6 +262,7 @@ runs:
             done
             
             echo "::error::Todas as tentativas de renovação de token falharam."
+            echo "::endgroup::"
             exit 1
         }
 
@@ -274,6 +276,7 @@ runs:
         else
           echo "Token válido."
         fi
+        echo "::endgroup::"
 
     - name: Instalar dependências
       shell: bash
