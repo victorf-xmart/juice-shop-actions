@@ -22,38 +22,37 @@ author: "Xmart Solutions"
 
 branding:
   icon: "XGuardian.png"
-  color: purple # Cor roxo900 [#2C1161] - XGuardian
+  color: purple
   label: Security Scanning
 version: v25.1.0
 
 inputs:
-  # Variáveis de segredo obrigatórias
-  # Email, senha, token de autenticação e token do GitHub
+  # ========================================================================================
+  # CREDENCIAIS OBRIGATÓRIAS
+  # ========================================================================================
   api_email:
-    description: "O e-mail para login/autenticação na API."
+    description: "E-mail de acesso à plataforma XGuardian (obrigatório)"
     required: true
   api_password:
-    description: "A senha para login/autenticação na API."
+    description: "Senha de acesso à plataforma XGuardian (obrigatório)"
     required: true
 
-  # Nome da aplicação (default: nome do repositório)
-  # Usado para criar a aplicação no XGuardian
+  # ========================================================================================
+  # CONFIGURAÇÃO DA APLICAÇÃO
+  # ========================================================================================
   app_name:
-    description: "O nome da aplicação."
+    description: "Nome da aplicação a ser escaneada (obrigatório)"
     required: true
-
-  # Opcionais (mas, com valores default)
-  # Configurações para criar a aplicação no XGuardian (caso não exista)
   team_id:
-    description: "O(s) ID(s) da(s) equipe(s)."
+    description: "ID(s) da(s) equipe(s) responsável(is) pela aplicação, ex: [1] ou [1,2,3]"
     default: "[1]"
     required: true
   languages:
-    description: "A(s) linguagem(ns) da aplicação."
+    description: 'Linguagens de programação da aplicação, ex: ["JavaScript"] ou ["Java", "Python"]'
     default: '["JavaScript"]'
     required: true
   description:
-    description: "A descrição da aplicação."
+    description: "Descrição da aplicação (opcional)"
     default: "Aplicação criada através do GitHub Actions - XGuardian"
     required: false
   policy_sast:
