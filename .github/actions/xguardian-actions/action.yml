@@ -202,6 +202,43 @@ runs:
           echo "AUTH_URL=https://auth.xguardianplatform.io" >> $GITHUB_ENV
         fi
 
+    - name: Verificar o ambiente antes de prosseguir
+      shell: bash
+      run: |
+        echo "::group::🔍 VERIFICAÇÃO DO AMBIENTE"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ VERIFICANDO VARIÁVEIS DE AMBIENTE                       │"
+        echo "└─────────────────────────────────────────────────────────┘"
+
+        # Lista de variáveis essenciais para verificar
+        check_var() {
+          local var_name="$1"
+          local var_value="${!var_name}"
+          
+          if [ -z "$var_value" ]; then
+            echo "⚠️ Variável $var_name não definida. Isso pode causar problemas."
+            return 1
+          else
+            echo "✅ $var_name: OK"
+            return 0
+          fi
+        }
+
+        # Verificar variáveis de ambiente essenciais
+        errors=0
+        check_var "BASE_URL" || ((errors++))
+        check_var "UPLOADER_URL" || ((errors++))
+        check_var "REPORTER_URL" || ((errors++))
+        check_var "AUTH_URL" || ((errors++))
+
+        if [ $errors -gt 0 ]; then
+          echo "⚠️ Uma ou mais variáveis de ambiente essenciais não estão definidas."
+          echo "O processo continuará, mas poderá encontrar erros."
+        else
+          echo "✅ Todas as variáveis de ambiente essenciais estão definidas."
+        fi
+        echo "::endgroup::"
+
     - name: Validando input secrets de email e senha
       shell: bash
       env:
