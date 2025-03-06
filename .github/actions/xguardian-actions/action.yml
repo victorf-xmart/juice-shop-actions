@@ -791,7 +791,36 @@ runs:
         TRANSLATE: ${{ inputs.translate }}
         PDF: ${{ inputs.pdf }}
       run: |
+        echo "::group::Configuração e execução do scan DAST"
+        echo "🔍 Preparando scan DAST para ${SITE_URL}..."
         UPLOAD_DAST_URL="${UPLOADER_URL}/upload-dast"
+
+        # Verificar se o APP_ID é N/A e buscar o ID correto se necessário
+        if [ "${APP_ID}" = "N/A" ]; then
+          echo "⚠️ APP_ID é N/A, buscando o ID correto..."
+          RESPONSE=$(curl -sS -X GET "${UPLOADER_URL}/get_apps_new?page=1&items_per_page=10" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}")
+
+          APP_ID=$(echo "$RESPONSE" | jq -r --arg NAME "${{ inputs.app_name }}" '.data[] | select(.name == $NAME) | .id' | head -n 1)
+
+          if [ -z "$APP_ID" ]; then
+            echo "::error::❌ Não foi possível encontrar o APP_ID para a aplicação ${inputs.app_name}"
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          echo "✅ APP_ID encontrado: $APP_ID"
+          echo "APP_ID=$APP_ID" >> $GITHUB_ENV
+        fi
+
+        # Construindo o payload para o scan DAST
+        echo "📝 Configurando parâmetros do scan DAST:"
+        echo "  - URL do site: ${SITE_URL}"
+        echo "  - Versão do scan: ${SCAN_VERSION}"
+        [ -n "${AUTH_URL}" ] && echo "  - URL de autenticação: ${AUTH_URL}"
+        [ -n "${LOGOUT_URL}" ] && echo "  - URL de logout: ${LOGOUT_URL}"
+        echo "  - Autenticação necessária: ${AUTH_EXIST}"
 
         DATA=$(cat << EOF
         {
@@ -809,13 +838,16 @@ runs:
         EOF
         )
 
+        echo "🚀 Iniciando scan DAST..."
         RESPONSE=$(curl -sS -X POST "${UPLOAD_DAST_URL}" \
           -H 'accept: application/json' \
           -H "Authorization: Bearer ${API_TOKEN}" \
           -H 'Content-Type: application/json' \
           -d "${DATA}")
 
+        # Verificar se o token expirou e renovar se necessário
         if echo "$RESPONSE" | grep -q '"detail": "Token is invalid, Signature has expired."'; then
+          echo "⚠️ Token expirado, renovando..."
           renew_token
           RESPONSE=$(curl -sS -X POST "${UPLOAD_DAST_URL}" \
             -H 'accept: application/json' \
@@ -824,8 +856,22 @@ runs:
             -d "${DATA}")
         fi
 
-        echo "Resposta do upload DAST:"
-        echo "$RESPONSE"
+        # Verificar resposta e processar adequadamente
+        if echo "$RESPONSE" | grep -q '"scan_id"'; then
+          SCAN_ID=$(echo "$RESPONSE" | jq -r '.scan_id')
+          echo "✅ Scan DAST iniciado com sucesso!"
+          echo "📊 ID do scan DAST: ${SCAN_ID}"
+          echo "::notice title=XGuardian Scan DAST::Scan DAST iniciado com sucesso para ${SITE_URL}"
+        else
+          echo "⚠️ Resposta do servidor:"
+          echo "$RESPONSE"
+          if echo "$RESPONSE" | grep -q 'error\|fail\|invalid'; then
+            echo "::error title=XGuardian Scan DAST::Falha ao iniciar scan DAST. Verifique os parâmetros e tente novamente."
+          else
+            echo "::notice title=XGuardian Scan DAST::Scan DAST iniciado. Verifique a resposta para confirmar."
+          fi
+        fi
+        echo "::endgroup::"
 
     - name: Zipar os arquivos
       if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
