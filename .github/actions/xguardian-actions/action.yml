@@ -378,13 +378,20 @@ runs:
         else
           echo "A aplicação não existe. Criando nova aplicação..."
 
-          # Create JSON data more safely using a different approach
+          # Determine microservices value
+          if [[ "${MICROSERVICES}" == "true" ]]; then
+            MICROSERVICES_VALUE="true"
+          else
+            MICROSERVICES_VALUE="false"
+          fi
+          
+          # Start building the JSON
           JSON_CONTENT='{'
           JSON_CONTENT+='"app_name": "'"${APP_NAME}"'",'
           JSON_CONTENT+='"team_id": '"${TEAM_ID}"','
           JSON_CONTENT+='"languages": '"${LANGUAGES}"','
           JSON_CONTENT+='"description": "'"${DESCRIPTION}"'",'
-          JSON_CONTENT+='"microservices": '"$([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
+          JSON_CONTENT+='"microservices": '"${MICROSERVICES_VALUE}"
           
           # Add microservices_data only if microservices is true
           if [[ "${MICROSERVICES}" == "true" ]]; then
