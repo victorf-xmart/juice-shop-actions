@@ -462,9 +462,12 @@ runs:
           local scan_type=$1
           local app_policy_id=$2
 
+          echo "::group::Verificação de políticas para ${scan_type^^}"
+          
           # Pula a verificação se a política for 0 ou não definida
           if [[ -z "$app_policy_id" || "$app_policy_id" == "0" || "$app_policy_id" == "null" ]]; then
             echo "Política para ${scan_type} não definida ou com valor 0. Pulando verificação."
+            echo "::endgroup::"
             return 0
           fi
 
@@ -547,6 +550,7 @@ runs:
         check_policies "dast" "${POLICY_DAST}" || echo "::warning::Falha ao verificar política DAST."
 
         echo "Verificação de políticas concluída."
+        echo "::endgroup::"
 
     - name: Buscar políticas após criação da aplicação
       shell: bash
