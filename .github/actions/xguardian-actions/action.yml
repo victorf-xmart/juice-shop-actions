@@ -469,9 +469,11 @@ runs:
         POLICY_SCA: "${{ env.POLICY_SCA }}"
         POLICY_DAST: "${{ env.POLICY_DAST }}"
       run: |
+        echo "::group::Verificação de políticas aplicadas"
         # Verificar se todas as políticas são 0 ou não definidas
         if [[ "${POLICY_SAST}" == "0" && "${POLICY_SCA}" == "0" && "${POLICY_DAST}" == "0" ]]; then
           echo "Nenhuma política definida (todos os valores são 0). Pulando verificação de políticas."
+          echo "::endgroup::"
           exit 0
         fi
 
@@ -497,6 +499,7 @@ runs:
           # Verifica se a resposta é um JSON válido
           if ! echo "$response" | jq '.' > /dev/null 2>&1; then
             echo "::error::Resposta da API não é um JSON válido: $response"
+            echo "::endgroup::"
             return 1
           fi
 
@@ -518,6 +521,7 @@ runs:
             echo "${scan_type^^}_LOW=0" >> $GITHUB_ENV
             echo "${scan_type^^}_RATING=0" >> $GITHUB_ENV
             echo "${scan_type^^}_PIPEACTION=noAction" >> $GITHUB_ENV
+            echo "::endgroup::"
             return 0
           fi
 
@@ -553,12 +557,17 @@ runs:
           echo "${scan_type^^}_PIPEACTION=$PIPEACTION" >> $GITHUB_ENV
 
           echo "Política para ${scan_type^^} configurada com sucesso:"
-          echo "  CRITICAL: $CRITICAL"
-          echo "  HIGH: $HIGH"
-          echo "  MEDIUM: $MEDIUM"
-          echo "  LOW: $LOW"
-          echo "  RATING: $RATING"
-          echo "  PIPEACTION: $PIPEACTION"
+          echo "┌─────────────────────────────────────────────┐"
+          echo "│ Limites de vulnerabilidades para ${scan_type^^} │"
+          echo "├─────────────────────────────────────────────┤"
+          echo "│ CRITICAL: $CRITICAL                          "
+          echo "│ HIGH:     $HIGH                              "
+          echo "│ MEDIUM:   $MEDIUM                            "
+          echo "│ LOW:      $LOW                               "
+          echo "│ RATING:   $RATING                            "
+          echo "│ AÇÃO:     $PIPEACTION                        "
+          echo "└─────────────────────────────────────────────┘"
+          echo "::endgroup::"
         }
 
         # Realiza as verificações individuais para cada tipo de scan
