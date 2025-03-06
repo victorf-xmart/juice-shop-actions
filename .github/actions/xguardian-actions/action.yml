@@ -843,6 +843,20 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
+        # Verificar se já temos o scan_id definido em uma execução anterior
+        if [ -f "/tmp/xguardian_scan_complete" ] && [ -s "/tmp/xguardian_scan_complete" ]; then
+          echo "Arquivo de estado do scan encontrado. Verificando dados..."
+          IFS=':' read -r stored_app_id stored_scan_id < /tmp/xguardian_scan_complete
+          
+          if [ -n "$stored_app_id" ] && [ -n "$stored_scan_id" ]; then
+            echo "Usando ID de scan previamente encontrado: $stored_scan_id"
+            echo "APP_ID=${stored_app_id}" >> $GITHUB_ENV
+            echo "SCAN_ID=${stored_scan_id}" >> $GITHUB_ENV
+            echo "SCAN_URL=${BASE_URL}/aplicacoes/${stored_app_id}/scans" >> $GITHUB_ENV
+            exit 0
+          fi
+        fi
+
         echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
         echo "Debug: APP_ID: ${APP_ID}"
 
