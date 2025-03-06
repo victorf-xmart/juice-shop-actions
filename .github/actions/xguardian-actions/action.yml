@@ -364,16 +364,23 @@ runs:
           POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_sca')
           POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_dast')
 
-          if [ -n "$POLICY_SAST" ]; then
+          # Verifica se as políticas não são nulas antes de exportá-las
+          if [ -n "$POLICY_SAST" ] && [ "$POLICY_SAST" != "null" ]; then
             echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
+          else
+            echo "POLICY_SAST=0" >> $GITHUB_ENV
           fi
 
-          if [ -n "$POLICY_SCA" ]; then
+          if [ -n "$POLICY_SCA" ] && [ "$POLICY_SCA" != "null" ]; then
             echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
+          else
+            echo "POLICY_SCA=0" >> $GITHUB_ENV
           fi
 
-          if [ -n "$POLICY_DAST" ]; then
+          if [ -n "$POLICY_DAST" ] && [ "$POLICY_DAST" != "null" ]; then
             echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
+          else
+            echo "POLICY_DAST=0" >> $GITHUB_ENV
           fi
         else
           echo "A aplicação não existe. Criando nova aplicação..."
