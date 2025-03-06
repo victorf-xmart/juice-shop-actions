@@ -1184,10 +1184,40 @@ runs:
         API_TOKEN: ${{ env.API_TOKEN }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
+        DEBUG_LEVEL: ${{ inputs.debug_level || 'normal' }}
       run: |
-        echo "::group::Buscando ID e resultados do scan"
+        echo "::group::🔍 BUSCANDO ID DO SCAN"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ BUSCANDO ID DO SCAN                                     │"
+        echo "└─────────────────────────────────────────────────────────┘"
+
+        # Função para log condicional baseado no nível de debug
+        debug_log() {
+          local level="$1"
+          local message="$2"
+          
+          case "$DEBUG_LEVEL" in
+            verbose)
+              # No modo verbose, mostra tudo
+              echo "$message"
+              ;;
+            normal)
+              # No modo normal, mostra apenas níveis info e acima
+              if [[ "$level" != "trace" ]]; then
+                echo "$message"
+              fi
+              ;;
+            minimal)
+              # No modo minimal, mostra apenas warnings e erros
+              if [[ "$level" == "warn" || "$level" == "error" ]]; then
+                echo "$message"
+              fi
+              ;;
+          esac
+        }
+
         echo "🔍 Iniciando busca pelo ID do scan com versão: ${SCAN_VERSION}"
-        echo "📋 Aplicação: ${APP_NAME} (ID: ${APP_ID})"
+        debug_log "info" "📋 Aplicação: ${APP_NAME} (ID: ${APP_ID})"
 
         # Verificar se já temos o scan_id definido em uma execução anterior
         if [ -f "/tmp/xguardian_scan_complete" ] && [ -s "/tmp/xguardian_scan_complete" ]; then
