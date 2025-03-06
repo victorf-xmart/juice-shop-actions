@@ -1,25 +1,3 @@
-# =====================================================================
-# XGuardian Security Scanning Action
-# =====================================================================
-# Versão: v25.1.0
-# Autor: Xmart Solutions
-# 
-# Esta action realiza scans de segurança automatizados para a plataforma XGuardian.
-# Suporta análises SAST (Source Code Analysis), SCA (Software Composition Analysis),
-# e DAST (Dynamic Application Security Testing).
-# 
-# Requisitos:
-#  - Credenciais de acesso à plataforma XGuardian (email/senha)
-#  - Escolha de pelo menos um tipo de scan (SAST, SCA ou DAST)
-#  - Para DAST: URL do site a ser analisado
-# 
-# Para mais informações, visite: https://xguardianplatform.io/
-# =====================================================================
-
-# name: XGuardian Scanning
-# description: "Realize análises de segurança (SAST/SCA ou DAST) de forma automatizada direto do Github Actions para plataforma XGuardian."
-# author: "Xmart Solutions"
-
 name: Security Scan # commit test v1.0.3 - Que erro tá dando na rota get_apps_new ?
 on:
   push:
