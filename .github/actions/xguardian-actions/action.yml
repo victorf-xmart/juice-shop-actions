@@ -749,47 +749,43 @@ runs:
         APP_NAME: ${{ inputs.app_name }}
         SCAN_DIR: ${{ inputs.scan_directory }}
       run: |
+        echo "::group::Criando arquivo ZIP para análise"
         # Substituir caracteres especiais no nome do arquivo zip
         SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
         echo "SAFE_APP_NAME=${SAFE_APP_NAME}" >> $GITHUB_ENV
 
-        echo "Debug: SCAN_DIR configurado como: ${SCAN_DIR}"
-        echo "Debug: Estrutura do diretório atual:"
-        pwd
-        tree -L 2 || ls -R  # tenta usar tree, se não disponível usa ls -R
+        echo "Diretório configurado para scan: ${SCAN_DIR}"
 
-        # Verifica se o diretório existe
+        # Verifica se o diretório existe sem listar todo o conteúdo
         if [ ! -d "$SCAN_DIR" ]; then
-          echo "Erro: Diretório '$SCAN_DIR' não encontrado no workspace"
-          echo "Por favor, verifique se o diretório existe ou use '.' para o diretório raiz"
+          echo "::error::Diretório '$SCAN_DIR' não encontrado no workspace"
+          echo "::error::Verifique se o diretório existe ou use '.' para o diretório raiz"
+          echo "::endgroup::"
           exit 1
         fi
 
-        echo "Debug: Diretório atual antes do zip: $(pwd)"
-        echo "Debug: Conteúdo do diretório $SCAN_DIR:"
-        ls -la "$SCAN_DIR"
+        echo "Iniciando criação do arquivo ZIP..."
 
-        echo "Debug: Criando zip em ${SAFE_APP_NAME}.zip"
-
-        # Criar o zip no diretório atual
+        # Criar o zip silenciosamente (-q) para reduzir a saída
         if [ "$SCAN_DIR" = "." ]; then
           # Se for diretório raiz, exclui alguns diretórios comuns
-          zip -r "${SAFE_APP_NAME}.zip" . -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
+          zip -rq "${SAFE_APP_NAME}.zip" . -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
         else
           # Se for um diretório específico
-          zip -r "${SAFE_APP_NAME}.zip" "$SCAN_DIR" -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
+          zip -rq "${SAFE_APP_NAME}.zip" "$SCAN_DIR" -x "*.git/*" "*/node_modules/*" "*.env" "*.zip"
         fi
 
         # Verificar se o arquivo zip foi criado
         if [ ! -f "${SAFE_APP_NAME}.zip" ]; then
-          echo "Erro: Arquivo zip não foi criado com sucesso"
-          ls -la
+          echo "::error::Arquivo zip não foi criado com sucesso"
+          echo "::endgroup::"
           exit 1
         fi
 
-        echo "Debug: Arquivo zip criado em: $(pwd)/${SAFE_APP_NAME}.zip"
-        echo "Debug: Tamanho do arquivo zip:"
-        du -h "${SAFE_APP_NAME}.zip"
+        # Mostrar apenas o tamanho do arquivo zip
+        ZIP_SIZE=$(du -h "${SAFE_APP_NAME}.zip" | cut -f1)
+        echo "Arquivo zip criado com sucesso: ${SAFE_APP_NAME}.zip (${ZIP_SIZE})"
+        echo "::endgroup::"
 
     - name: Upload da aplicação para o scan (SAST e/ou SCA)
       if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
