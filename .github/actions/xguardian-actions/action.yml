@@ -694,6 +694,35 @@ runs:
       run: |
         echo "short_sha=${GITHUB_SHA:0:6}" >> $GITHUB_OUTPUT
 
+    - name: Verificar pré-requisitos antes da análise
+      if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
+      shell: bash
+      env:
+        APP_ID: ${{ env.APP_ID }}
+        API_TOKEN: ${{ env.API_TOKEN }}
+      run: |
+        echo "::group::🔎 VERIFICAÇÃO DE PRÉ-REQUISITOS"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ VERIFICANDO PRÉ-REQUISITOS PARA SCAN                    │"
+        echo "└─────────────────────────────────────────────────────────┘"
+
+        # Verificar se temos um token válido
+        if [ -z "$API_TOKEN" ]; then
+          echo "::error::Token de API não encontrado. Verifique se a autenticação foi realizada corretamente."
+          echo "::endgroup::"
+          exit 1
+        fi
+
+        # Verificar se temos um ID de aplicação
+        if [ -z "$APP_ID" ] || [ "$APP_ID" = "N/A" ]; then
+          echo "::warning::ID da aplicação indefinido ou marcado como N/A. A etapa seguinte tentará buscar o ID correto."
+        else
+          echo "✅ ID da aplicação configurado: $APP_ID"
+        fi
+
+        echo "✅ Todos os pré-requisitos verificados!"
+        echo "::endgroup::"
+
     - name: Criar o Scan SAST e/ou SCA (Obter URL de upload)
       if: ${{ inputs.sast == 'true' || inputs.sca == 'true' }}
       shell: bash
