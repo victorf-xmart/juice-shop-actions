@@ -935,7 +935,11 @@ runs:
         APP_NAME: ${{ inputs.app_name }}
         SCAN_DIR: ${{ inputs.scan_directory }}
       run: |
-        echo "::group::Criando arquivo ZIP para análise"
+        echo "::group::📦 CRIAÇÃO DO ARQUIVO ZIP"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ PREPARANDO ARQUIVOS PARA ANÁLISE                        │"
+        echo "└─────────────────────────────────────────────────────────┘"
+
         # Substituir caracteres especiais no nome do arquivo zip
         SAFE_APP_NAME=$(echo "${APP_NAME}" | tr '/' '_')
         echo "SAFE_APP_NAME=${SAFE_APP_NAME}" >> $GITHUB_ENV
@@ -944,6 +948,9 @@ runs:
 
         # Verifica se o diretório existe sem listar todo o conteúdo
         if [ ! -d "$SCAN_DIR" ]; then
+          echo "┌─────────────────────────────────────────────────────────┐"
+          echo "│ ❌ ERRO: DIRETÓRIO NÃO ENCONTRADO                       │"
+          echo "└─────────────────────────────────────────────────────────┘"
           echo "::error::Diretório '$SCAN_DIR' não encontrado no workspace"
           echo "::error::Verifique se o diretório existe ou use '.' para o diretório raiz"
           echo "::endgroup::"
@@ -963,6 +970,9 @@ runs:
 
         # Verificar se o arquivo zip foi criado
         if [ ! -f "${SAFE_APP_NAME}.zip" ]; then
+          echo "┌─────────────────────────────────────────────────────────┐"
+          echo "│ ❌ ERRO: FALHA NA CRIAÇÃO DO ARQUIVO ZIP                │"
+          echo "└─────────────────────────────────────────────────────────┘"
           echo "::error::Arquivo zip não foi criado com sucesso"
           echo "::endgroup::"
           exit 1
@@ -970,7 +980,10 @@ runs:
 
         # Mostrar apenas o tamanho do arquivo zip
         ZIP_SIZE=$(du -h "${SAFE_APP_NAME}.zip" | cut -f1)
-        echo "Arquivo zip criado com sucesso: ${SAFE_APP_NAME}.zip (${ZIP_SIZE})"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ ✅ ARQUIVO ZIP CRIADO COM SUCESSO                       │"
+        echo "│ 📦 ${SAFE_APP_NAME}.zip (${ZIP_SIZE})                   │"
+        echo "└─────────────────────────────────────────────────────────┘"
         echo "::endgroup::"
 
     - name: Upload da aplicação para o scan (SAST e/ou SCA)
