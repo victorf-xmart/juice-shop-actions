@@ -13,7 +13,7 @@
 #  - Escolha de pelo menos um tipo de scan (SAST, SCA ou DAST)
 #  - Para DAST: URL do site a ser analisado
 #
-# Para mais informações, visite: https://xguardianplatform.io/
+# Para mais informações, visite: https://github.com/marketplace/actions/xguardian-scanning
 # =====================================================================
 
 name: XGuardian Scanning
@@ -31,141 +31,151 @@ inputs:
   # CREDENCIAIS OBRIGATÓRIAS
   # ========================================================================================
   api_email:
-    description: "E-mail de acesso à plataforma XGuardian (obrigatório)"
+    description: "Email de acesso à plataforma XGuardian. Recomenda-se usar secrets do GitHub."
     required: true
   api_password:
-    description: "Senha de acesso à plataforma XGuardian (obrigatório)"
+    description: "Senha de acesso à plataforma XGuardian. Recomenda-se usar secrets do GitHub."
     required: true
 
   # ========================================================================================
   # CONFIGURAÇÃO DA APLICAÇÃO
   # ========================================================================================
   app_name:
-    description: "Nome da aplicação a ser escaneada (obrigatório)"
+    description: "Nome da aplicação a ser escaneada. Usado para identificação na plataforma XGuardian."
     required: true
   team_id:
-    description: "ID(s) da(s) equipe(s) responsável(is) pela aplicação, ex: [1] ou [1,2,3]"
+    description: "ID(s) da(s) equipe(s) responsável(is) pela aplicação no formato JSON. Ex: [1] ou [1,2,3]"
     default: "[1]"
     required: true
   languages:
-    description: 'Linguagens de programação da aplicação, ex: ["JavaScript"] ou ["Java", "Python"]'
+    description: 'Linguagens de programação da aplicação no formato JSON array. Ex: ["JavaScript"] ou ["Java", "Python"]'
     default: '["JavaScript"]'
     required: true
   description:
-    description: "Descrição da aplicação (opcional)"
+    description: "Descrição da aplicação que será exibida na plataforma XGuardian."
     default: "Aplicação criada através do GitHub Actions - XGuardian"
     required: false
   policy_sast:
-    description: "O ID da política de SAST."
+    description: "ID da política de SAST (análise estática) a ser aplicada. Use 0 para política padrão."
     default: "0"
     required: false
   policy_sca:
-    description: "O ID da política de SCA."
+    description: "ID da política de SCA (análise de componentes) a ser aplicada. Use 0 para política padrão."
     default: "0"
     required: false
   policy_dast:
-    description: "O ID da política de DAST."
+    description: "ID da política de DAST (análise dinâmica) a ser aplicada. Use 0 para política padrão."
     default: "0"
     required: false
   microservices:
-    description: "A aplicação possui microserviços?"
+    description: "Indica se a aplicação possui microserviços. Valores aceitos: true ou false"
     default: "false"
     required: false
   microservices_data:
-    description: "O(s) dados do(s) microserviço(s): Nome(s) e linguagem(ns)."
+    description: 'Dados dos microserviços no formato JSON array. Ex: [{"name": "MS1", "language": ["JavaScript"]}]'
     default: '[{"name": "MS1", "language": ["JavaScript"]}]'
     required: false
 
-  # Seleção do tipo de scan (SAST e/ou SCA ou DAST)
+  # ========================================================================================
+  # SELEÇÃO DO TIPO DE SCAN
+  # ========================================================================================
   sast:
-    description: "Vai ser realizado o scan SAST?"
+    description: "Ativa o scan SAST (análise estática de código fonte). Valores aceitos: true ou false"
     default: "false"
     type: string
     required: false
   sca:
-    description: "Vai ser realizado o scan SCA?"
+    description: "Ativa o scan SCA (análise de composição de software/dependências). Valores aceitos: true ou false"
     default: "false"
     type: string
     required: false
   dast:
-    description: "Vai ser realizado o scan DAST?"
+    description: "Ativa o scan DAST (análise dinâmica de segurança). Valores aceitos: true ou false"
     default: "false"
     type: string
     required: false
 
-  # Configurações para o scan DAST
+  # ========================================================================================
+  # CONFIGURAÇÕES PARA O SCAN DAST
+  # ========================================================================================
   site_url:
-    description: "O URL do site para o scan DAST."
+    description: "URL completa do site para análise DAST. Obrigatório se dast=true."
     default: ""
     required: false
     type: string
   auth_url:
-    description: "O URL de autenticação/login para o scan DAST."
+    description: "URL da página de autenticação/login para o scan DAST."
     default: ""
     required: false
     type: string
   logout_url:
-    description: "O URL de logout para o scan DAST."
+    description: "URL da página de logout para o scan DAST."
     default: ""
     required: false
     type: string
   auth_exist:
-    description: "O site possui autenticação?"
+    description: "Indica se o site requer autenticação para o scan DAST. Valores aceitos: true ou false"
     default: false
     required: false
     type: boolean
   user_login:
-    description: "O usuário para autenticação."
+    description: "Nome de usuário para autenticação no site durante o scan DAST."
     default: ""
     required: false
     type: string
   password_login:
-    description: "A senha para autenticação."
+    description: "Senha para autenticação no site durante o scan DAST. Recomenda-se usar secrets do GitHub."
     default: ""
     required: false
     type: string
 
-  # Configurações adicionais para o scan
+  # ========================================================================================
+  # CONFIGURAÇÕES ADICIONAIS PARA O SCAN
+  # ========================================================================================
   translate:
-    description: "O relatório será traduzido para português do Brasil?"
+    description: "Traduz o relatório para português do Brasil. Valores aceitos: true ou false"
     default: "false"
     type: string
     required: false
   exclude:
-    description: "Diretórios ou arquivos a serem excluídos do scan."
+    description: "Lista de diretórios ou arquivos a serem excluídos do scan. Ex: 'node_modules/,dist/'"
     default: ""
     type: string
     required: false
   pdf:
-    description: "O relatório será gerado em PDF detalhado?"
+    description: "Gera relatório detalhado em PDF após o scan. Valores aceitos: true ou false"
     default: "false"
     type: string
     required: false
   pipeaction:
-    description: "Ação na pipeline em caso de vulnerabilidades (warn, fail, noAction)."
+    description: "Ação a executar na pipeline quando vulnerabilidades são encontradas. Valores: warn, fail, noAction"
     default: "noAction"
     type: string
     required: false
 
-  # Configurações caso o ambiente seja de desenvolvimento
+  # ========================================================================================
+  # CONFIGURAÇÕES DE AMBIENTE
+  # ========================================================================================
   is_development:
-    description: "O ambiente é de desenvolvimento?"
+    description: "Indica se o ambiente é de desenvolvimento para usar URLs de teste. Valores aceitos: true ou false"
     default: "false"
     type: string
     required: false
 
-  # Configurações opcionais (caso o usuário deseje)
+  # ========================================================================================
+  # CONFIGURAÇÕES OPCIONAIS
+  # ========================================================================================
   scan_directory:
-    description: "Diretório que será zipado para o scan (ex: 'dist' para código buildado)"
-    default: "." # Root do projeto
+    description: "Diretório específico que será zipado para o scan. Use '.' para analisar todo o repositório."
+    default: "."
     required: false
   get_scan_id:
-    description: "Deseja buscar o ID do Scan após o upload?"
+    description: "Busca o ID do scan após o upload para acompanhamento. Valores aceitos: true ou false"
     default: "false"
     type: string
     required: false
   save_vulns:
-    description: "Permitir salvar vulnerabilidades no banco de dados?"
+    description: "Salva as vulnerabilidades encontradas no banco de dados do XGuardian. Valores aceitos: true ou false"
     default: "false"
     required: false
 
