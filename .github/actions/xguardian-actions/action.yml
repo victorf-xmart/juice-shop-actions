@@ -377,7 +377,7 @@ runs:
           fi
         else
           echo "A aplicação não existe. Criando nova aplicação..."
-          DATA=$(cat << EOF
+          DATA=$(cat <<EOF
           {
             "app_name": "${APP_NAME}",
             "team_id": ${TEAM_ID},
