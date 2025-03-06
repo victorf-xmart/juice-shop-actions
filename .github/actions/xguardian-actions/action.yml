@@ -344,6 +344,7 @@ runs:
         MICROSERVICES: ${{ inputs.microservices }}
         MICROSERVICES_DATA: ${{ inputs.microservices_data }}
       run: |
+        echo "::group::Verificando e configurando aplicação"
         # Converte caracteres especiais para espaços, mantendo espaços existentes
         CLEAN_APP_NAME=$(echo "${APP_NAME}" | tr -c '[:alnum:] ' ' ')
 
@@ -454,6 +455,7 @@ runs:
             exit 1
           fi
         fi
+        echo "::endgroup::"
 
     - name: Verificar políticas definidas
       shell: bash
@@ -851,6 +853,7 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
+        echo "::group::Buscando ID do scan"
         # Verificar se já temos o scan_id definido em uma execução anterior
         if [ -f "/tmp/xguardian_scan_complete" ] && [ -s "/tmp/xguardian_scan_complete" ]; then
           echo "Arquivo de estado do scan encontrado. Verificando dados..."
@@ -946,6 +949,7 @@ runs:
           echo "$RESPONSE" | jq '.' || echo "$RESPONSE"
           exit 1
         fi
+        echo "::endgroup::"
 
     - name: Aguardar finalização do scan
       shell: bash
