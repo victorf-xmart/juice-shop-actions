@@ -360,28 +360,24 @@ runs:
           echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME)'
           echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
+          # Extrai os valores das políticas com cuidado para tratar valores nulos
           POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_sast')
           POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_sca')
           POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_dast')
 
-          # Verifica se as políticas não são nulas antes de exportá-las
-          if [ -n "$POLICY_SAST" ] && [ "$POLICY_SAST" != "null" ]; then
-            echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
-          else
-            echo "POLICY_SAST=0" >> $GITHUB_ENV
-          fi
-
-          if [ -n "$POLICY_SCA" ] && [ "$POLICY_SCA" != "null" ]; then
-            echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
-          else
-            echo "POLICY_SCA=0" >> $GITHUB_ENV
-          fi
-
-          if [ -n "$POLICY_DAST" ] && [ "$POLICY_DAST" != "null" ]; then
-            echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
-          else
-            echo "POLICY_DAST=0" >> $GITHUB_ENV
-          fi
+          # Verifica e garante valores padrão para políticas nulas ou vazias
+          # Usando o operador ternário com condições mais robustas
+          POLICY_SAST_SAFE=$([ -n "$POLICY_SAST" ] && [ "$POLICY_SAST" != "null" ] && echo "$POLICY_SAST" || echo "0")
+          POLICY_SCA_SAFE=$([ -n "$POLICY_SCA" ] && [ "$POLICY_SCA" != "null" ] && echo "$POLICY_SCA" || echo "0")
+          POLICY_DAST_SAFE=$([ -n "$POLICY_DAST" ] && [ "$POLICY_DAST" != "null" ] && echo "$POLICY_DAST" || echo "0")
+          
+          # Agora definimos as variáveis de ambiente com os valores seguros
+          echo "POLICY_SAST=$POLICY_SAST_SAFE" >> $GITHUB_ENV
+          echo "POLICY_SCA=$POLICY_SCA_SAFE" >> $GITHUB_ENV
+          echo "POLICY_DAST=$POLICY_DAST_SAFE" >> $GITHUB_ENV
+          
+          # Log para debug
+          echo "Políticas definidas: SAST=$POLICY_SAST_SAFE, SCA=$POLICY_SCA_SAFE, DAST=$POLICY_DAST_SAFE"
         else
           echo "A aplicação não existe. Criando nova aplicação..."
 
