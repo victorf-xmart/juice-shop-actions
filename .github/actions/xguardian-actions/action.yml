@@ -356,14 +356,18 @@ runs:
 
         if [ -n "$APP_ID" ]; then
           echo "APP_ID encontrado: $APP_ID para a aplicação: $APP_NAME"
+          
+          # Obtém os detalhes apenas da primeira aplicação encontrada (a mais recente)
+          APP_DETAILS=$(echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" --arg ID "$APP_ID" '.data[] | select(.name == $NAME and .id == ($ID | tonumber))' | head -n 1)
+          
           echo "Detalhes da aplicação:"
-          echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME)'
+          echo "$APP_DETAILS"
           echo "APP_ID=$APP_ID" >> $GITHUB_ENV
 
-          # Extrai os valores das políticas com cuidado para tratar valores nulos
-          POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_sast')
-          POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_sca')
-          POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_dast')
+          # Extrai os valores das políticas apenas da aplicação selecionada
+          POLICY_SAST=$(echo "$APP_DETAILS" | jq -r '.policies_id_sast')
+          POLICY_SCA=$(echo "$APP_DETAILS" | jq -r '.policies_id_sca')
+          POLICY_DAST=$(echo "$APP_DETAILS" | jq -r '.policies_id_dast')
 
           # Verifica e garante valores padrão para políticas nulas ou vazias
           # Usando o operador ternário com condições mais robustas
