@@ -378,7 +378,8 @@ runs:
         else
           echo "A aplicação não existe. Criando nova aplicação..."
 
-          DATA=$(cat << EOF
+          # Write the JSON to a temporary file and then read it
+          cat > /tmp/app_data.json << 'EOJSON'
           {
             "app_name": "${APP_NAME}",
             "team_id": ${TEAM_ID},
@@ -387,14 +388,16 @@ runs:
             "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
             $([[ "${MICROSERVICES}" == "true" ]] && echo ',"microservices_data": ${MICROSERVICES_DATA}')
           }
-          EOF
-          )
+          EOJSON
 
+          # Process the temporary file to replace variables
+          envsubst < /tmp/app_data.json > /tmp/app_data_processed.json
+          
           RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}" \
             -H 'Content-Type: application/json' \
-            -d "${DATA}")
+            -d @/tmp/app_data_processed.json)
 
           # Verificar se a resposta contém a mensagem de sucesso
           if echo "$RESPONSE" | grep -q '"sucess":"Aplicação'; then
