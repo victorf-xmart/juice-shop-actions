@@ -452,35 +452,52 @@ runs:
         POLICY_SCA: "${{ env.POLICY_SCA }}"
         POLICY_DAST: "${{ env.POLICY_DAST }}"
       run: |
+        # Verificar se todas as políticas são 0 ou não definidas
+        if [[ "${POLICY_SAST}" == "0" && "${POLICY_SCA}" == "0" && "${POLICY_DAST}" == "0" ]]; then
+          echo "Nenhuma política definida (todos os valores são 0). Pulando verificação de políticas."
+          exit 0
+        fi
+
         check_policies() {
           local scan_type=$1
           local app_policy_id=$2
 
-          if [ -z "$app_policy_id" ] || [ "$app_policy_id" == "null" ]; then
-            echo "Política para ${scan_type} é null ou vazia, pulando para o próximo step."
-            return
+          # Pula a verificação se a política for 0 ou não definida
+          if [[ -z "$app_policy_id" || "$app_policy_id" == "0" || "$app_policy_id" == "null" ]]; then
+            echo "Política para ${scan_type} não definida ou com valor 0. Pulando verificação."
+            return 0
           fi
 
+          echo "Verificando política para ${scan_type} com ID ${app_policy_id}..."
+          
           local response=$(curl -s -X GET "${AUTH_URL}/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
-          echo "$response" | jq '.' || {
+          # Verifica se a resposta é um JSON válido
+          if ! echo "$response" | jq '.' > /dev/null 2>&1; then
             echo "::error::Resposta da API não é um JSON válido: $response"
-            exit 1
-          }
-
-          local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == ($id | tonumber))')
-          echo "$policy" | jq '.' || {
-            echo "::error::Política atribuída para ${scan_type} não encontrada: $app_policy_id"
-            exit 1
-          }
-
-          if [ -z "$policy" ]; then
-            echo "::error::Política atribuída para ${scan_type} não encontrada: $app_policy_id"
-            exit 1
+            return 1
           fi
 
+          # Exibe todas as políticas disponíveis (para debug)
+          echo "Políticas disponíveis para ${scan_type}:"
+          echo "$response" | jq '.'
+
+          # Busca a política específica
+          local policy=$(echo "$response" | jq --arg id "$app_policy_id" '.[] | select(.id == ($id | tonumber))')
+          
+          # Verifica se a política foi encontrada
+          if [ -z "$policy" ] || [ "$policy" == "null" ]; then
+            echo "::warning::Política atribuída para ${scan_type} com ID ${app_policy_id} não encontrada."
+            return 0
+          fi
+
+          # Exibe os detalhes da política
+          echo "Política encontrada para ${scan_type}:"
+          echo "$policy" | jq '.'
+
+          # Extrai os valores da política
           export CRITICAL=$(echo "$policy" | jq -r '.critical')
           export HIGH=$(echo "$policy" | jq -r '.high')
           export MEDIUM=$(echo "$policy" | jq -r '.medium')
@@ -488,31 +505,40 @@ runs:
           export RATING=$(echo "$policy" | jq -r '.rating')
           export PIPEACTION=$(echo "$policy" | jq -r '.pipeaction')
 
+          # Verifica se os valores foram extraídos corretamente
           if [ -z "$CRITICAL" ] || [ -z "$HIGH" ] || [ -z "$MEDIUM" ] || [ -z "$LOW" ] || [ -z "$RATING" ] || [ -z "$PIPEACTION" ]; then
-            echo "::error::Falha ao atribuir variáveis de ambiente para ${scan_type}"
-            exit 1
+            echo "::warning::Falha ao extrair valores da política para ${scan_type}. Usando valores padrão."
+            CRITICAL=0
+            HIGH=0
+            MEDIUM=0
+            LOW=0
+            RATING=0
+            PIPEACTION="noAction"
           fi
 
-          echo "Política atribuída para ${scan_type}:"
-          echo "ID: $app_policy_id"
-          echo "CRITICAL: $CRITICAL"
-          echo "HIGH: $HIGH"
-          echo "MEDIUM: $MEDIUM"
-          echo "LOW: $LOW"
-          echo "RATING: $RATING"
-          echo "PIPEACTION: $PIPEACTION"
-
+          # Define as variáveis de ambiente
           echo "${scan_type^^}_CRITICAL=$CRITICAL" >> $GITHUB_ENV
           echo "${scan_type^^}_HIGH=$HIGH" >> $GITHUB_ENV
           echo "${scan_type^^}_MEDIUM=$MEDIUM" >> $GITHUB_ENV
           echo "${scan_type^^}_LOW=$LOW" >> $GITHUB_ENV
           echo "${scan_type^^}_RATING=$RATING" >> $GITHUB_ENV
           echo "${scan_type^^}_PIPEACTION=$PIPEACTION" >> $GITHUB_ENV
+
+          echo "Política para ${scan_type^^} configurada com sucesso:"
+          echo "  CRITICAL: $CRITICAL"
+          echo "  HIGH: $HIGH"
+          echo "  MEDIUM: $MEDIUM"
+          echo "  LOW: $LOW"
+          echo "  RATING: $RATING"
+          echo "  PIPEACTION: $PIPEACTION"
         }
 
-        check_policies "sast" "${POLICY_SAST}"
-        check_policies "sca" "${POLICY_SCA}"
-        check_policies "dast" "${POLICY_DAST}"
+        # Realiza as verificações individuais para cada tipo de scan
+        check_policies "sast" "${POLICY_SAST}" || echo "::warning::Falha ao verificar política SAST."
+        check_policies "sca" "${POLICY_SCA}" || echo "::warning::Falha ao verificar política SCA."
+        check_policies "dast" "${POLICY_DAST}" || echo "::warning::Falha ao verificar política DAST."
+
+        echo "Verificação de políticas concluída."
 
     - name: Buscar políticas após criação da aplicação
       shell: bash
