@@ -377,16 +377,17 @@ runs:
           fi
         else
           echo "A aplicação não existe. Criando nova aplicação..."
-          DATA=$(cat <<EOF
-            {
-              "app_name": "${APP_NAME}",
-              "team_id": ${TEAM_ID},
-              "languages": ${LANGUAGES},
-              "description": "${DESCRIPTION}",
-              "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
-              $([[ "${MICROSERVICES}" == "true" ]] && echo ',
-              "microservices_data": ${MICROSERVICES_DATA}')
-            }
+
+          DATA=$(cat << EOF
+          {
+            "app_name": "${APP_NAME}",
+            "team_id": ${TEAM_ID},
+            "languages": ${LANGUAGES},
+            "description": "${DESCRIPTION}",
+            "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
+            $([[ "${MICROSERVICES}" == "true" ]] && echo ',
+            "microservices_data": ${MICROSERVICES_DATA}')
+          }
           EOF
           )
 
