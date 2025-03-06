@@ -385,8 +385,7 @@ runs:
             "languages": ${LANGUAGES},
             "description": "${DESCRIPTION}",
             "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
-            $([[ "${MICROSERVICES}" == "true" ]] && echo ',
-            "microservices_data": ${MICROSERVICES_DATA}')
+            $([[ "${MICROSERVICES}" == "true" ]] && echo ',"microservices_data": ${MICROSERVICES_DATA}')
           }
           EOF
           )
