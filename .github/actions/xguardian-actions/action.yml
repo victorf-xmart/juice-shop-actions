@@ -342,8 +342,23 @@ runs:
         API_EMAIL: ${{ inputs.api_email }}
         API_PASSWORD: ${{ inputs.api_password }}
       run: |
-        echo "::group::Autenticação na API XGuardian"
-        echo "🔐 Iniciando processo de autenticação..."
+        echo "::group::🔐 AUTENTICAÇÃO NA API XGUARDIAN"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ INICIANDO PROCESSO DE AUTENTICAÇÃO                      │"
+        echo "└─────────────────────────────────────────────────────────┘"
+
+        # Função para tratamento de erros
+        handle_error() {
+          local error_msg="$1"
+          local exit_code="${2:-1}"
+          
+          echo "┌─────────────────────────────────────────────────────────┐"
+          echo "│ ❌ ERRO: $error_msg                                     │"
+          echo "└─────────────────────────────────────────────────────────┘"
+          echo "::error::$error_msg"
+          echo "::endgroup::"
+          exit "$exit_code"
+        }
 
         # Função para fazer login com retry
         login_with_retry() {
@@ -372,8 +387,7 @@ runs:
             attempt=$((attempt+1))
           done
           
-          echo "::error::❌ Todas as tentativas de login falharam. Verifique suas credenciais ou a disponibilidade da API."
-          exit 1
+          handle_error "Todas as tentativas de login falharam. Verifique suas credenciais ou a disponibilidade da API."
         }
 
         login_with_retry
