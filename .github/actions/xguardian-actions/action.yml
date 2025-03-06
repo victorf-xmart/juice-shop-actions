@@ -1100,7 +1100,10 @@ runs:
         POLICY_SAST: ${{ env.POLICY_SAST }}
         POLICY_SCA: ${{ env.POLICY_SCA }}
         POLICY_DAST: ${{ env.POLICY_DAST }}
+        BASE_URL: ${{ env.BASE_URL }}
+        APP_NAME: ${{ inputs.app_name }}
       run: |
+        echo "::group::Avaliação de vulnerabilidades"
         check_scan_status() {
           local response=$(curl -s -X GET "${REPORTER_URL}/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
             -H 'accept: application/json' \
@@ -1136,8 +1139,23 @@ runs:
           local scan_data=$(echo "$response" | jq -r --arg version "${SCAN_VERSION}" '.data[] | select(.scanuuid == $version)')
 
           if [ -n "$scan_data" ] && [ "$scan_data" != "null" ]; then
-            echo "Scan encontrado:"
-            echo "$scan_data" | jq '.'
+            echo "Scan encontrado com sucesso!"
+            
+            # Extrair informações básicas do scan
+            local scan_id=$(echo "$scan_data" | jq -r '.id')
+            local scan_date=$(echo "$scan_data" | jq -r '.created_at')
+            
+            echo "┌─────────────────────────────────────────────────────────┐"
+            echo "│ Informações do Scan                                     │"
+            echo "├─────────────────────────────────────────────────────────┤"
+            echo "│ Aplicação: ${APP_NAME}"
+            echo "│ ID do Scan: $scan_id"
+            echo "│ Data do Scan: $scan_date"
+            echo "│ Status: $SCAN_STATUS"
+            echo "│"
+            echo "│ 🔗 Resultados completos disponíveis em:"
+            echo "│ ${BASE_URL}/aplicacoes/${APP_ID}/scans"
+            echo "└─────────────────────────────────────────────────────────┘"
           else
             echo "::error::Scan não encontrado na resposta."
             exit 1
@@ -1148,6 +1166,7 @@ runs:
 
         compare_vulnerabilities() {
           local scan_data=$1
+          local has_issues=false
 
           local sast_critical=$(echo "$scan_data" | jq -r '.scan_critical // 0')
           local sast_high=$(echo "$scan_data" | jq -r '.scan_high // 0')
@@ -1164,6 +1183,7 @@ runs:
           local dast_medium=$(echo "$scan_data" | jq -r '.dast_medium // 0')
           local dast_low=$(echo "$scan_data" | jq -r '.dast_low // 0')
 
+          # Garantir que valores estão definidos
           SAST_CRITICAL=${SAST_CRITICAL:-0}
           SAST_HIGH=${SAST_HIGH:-0}
           SAST_MEDIUM=${SAST_MEDIUM:-0}
@@ -1191,47 +1211,100 @@ runs:
             local policy_low=$9
             local pipeaction=${10}
             local policy_id=${11}
+            local result="passed"
+            local local_has_issues=false
 
             if [ -z "$policy_critical" ] || [ -z "$policy_high" ] || [ -z "$policy_medium" ] || [ -z "$policy_low" ]; then
               return
             fi
 
             if [ "$policy_critical" -eq 0 ] && [ "$policy_high" -eq 0 ] && [ "$policy_medium" -eq 0 ] && [ "$policy_low" -eq 0 ]; then
-              echo "Política para ${scan_type^^} não definida."
               return
             fi
 
-            echo "::group::Resultados para ${scan_type^^}"
-            if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ] || [ "$medium" -gt 0 ] || [ "$low" -gt 0 ]; then
-              echo "Políticas definidas para ${scan_type^^} (ID: $policy_id): CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
-              echo "Vulnerabilidades encontradas para ${scan_type^^}:"
-              [ "$critical" -gt 0 ] && echo "🔴 CRITICAL=$critical"
-              [ "$high" -gt 0 ] && echo "🟠 HIGH=$high"
-              [ "$medium" -gt 0 ] && echo "🟡 MEDIUM=$medium"
-              [ "$low" -gt 0 ] && echo "🔵 LOW=$low"
+            echo "::group::Resultados de vulnerabilidades para ${scan_type^^}"
+            
+            # Cabeçalho da tabela
+            echo "┌─────────────────────────────────────────────────────────┐"
+            echo "│ Análise de vulnerabilidades de ${scan_type^^}           │"
+            echo "├─────────────────────────────────────────────────────────┤"
+            echo "│ Política aplicada: ID $policy_id                        │"
+            echo "│ Limites definidos:                                      │"
+            echo "│   CRÍTICO: $policy_critical | ALTO: $policy_high | MÉDIO: $policy_medium | BAIXO: $policy_low │"
+            echo "│ Ação configurada: $pipeaction                           │"
+            echo "├─────────────────────────────────────────────────────────┤"
+            echo "│ Vulnerabilidades encontradas:                           │"
 
-              if [ "$critical" -gt "$policy_critical" ] || [ "$high" -gt "$policy_high" ] || [ "$medium" -gt "$policy_medium" ] || [ "$low" -gt "$policy_low" ]; then
-                if [ "$pipeaction" == "fail" ]; then
-                  echo "::error::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
-                elif [ "$pipeaction" == "warn" ]; then
-                  echo "::warning::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
-                else
-                  echo "::notice::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id), mas nenhuma ação foi tomada devido ao pipeaction definido como 'noAction'."
-                fi
-              else
-                echo "::notice::Vulnerabilidades ${scan_type^^} estão dentro das políticas definidas (ID: $policy_id)."
-              fi
+            # Mostrar vulnerabilidades encontradas com formatação adequada
+            if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ] || [ "$medium" -gt 0 ] || [ "$low" -gt 0 ]; then
+                [ "$critical" -gt 0 ] && echo "│ 🔴 CRÍTICO: $critical"
+                [ "$high" -gt 0 ] && echo "│ 🟠 ALTO: $high"
+                [ "$medium" -gt 0 ] && echo "│ 🟡 MÉDIO: $medium"
+                [ "$low" -gt 0 ] && echo "│ 🔵 BAIXO: $low"
             else
-              echo "::notice::Nenhuma vulnerabilidade encontrada para ${scan_type^^}."
+                echo "│ ✅ Nenhuma vulnerabilidade encontrada!"
             fi
+            echo "└─────────────────────────────────────────────────────────┘"
+
+            # Verificar se excede a política
+            if [ "$critical" -gt "$policy_critical" ] || [ "$high" -gt "$policy_high" ] || [ "$medium" -gt "$policy_medium" ] || [ "$low" -gt "$policy_low" ]; then
+                local_has_issues=true
+                result="failed"
+                
+                if [ "$pipeaction" == "fail" ]; then
+                    echo "::error title=Falha de segurança no tipo ${scan_type^^}::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
+                elif [ "$pipeaction" == "warn" ]; then
+                    echo "::warning title=Alerta de segurança no tipo ${scan_type^^}::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
+                else
+                    echo "::notice title=Informação de segurança no tipo ${scan_type^^}::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id), mas nenhuma ação foi tomada devido ao pipeaction definido como 'noAction'."
+                fi
+            else
+                echo "::notice title=Verificação de ${scan_type^^} concluída::Vulnerabilidades ${scan_type^^} estão dentro dos limites aceitáveis definidos na política (ID: $policy_id)."
+            fi
+            
+            # Resumo do resultado
+            if [ "$local_has_issues" = true ]; then
+                echo "❌ Resultado da análise ${scan_type^^}: FALHOU"
+                has_issues=true
+            else
+                echo "✅ Resultado da análise ${scan_type^^}: PASSOU"
+            fi
+            
             echo "::endgroup::"
+            
+            return 0
           }
 
+          # Verificar cada tipo de scan
+          [ "$sast_critical" -gt 0 ] || [ "$sast_high" -gt 0 ] || [ "$sast_medium" -gt 0 ] || [ "$sast_low" -gt 0 ] && \
           check_vulnerabilities "sast" "$sast_critical" "$sast_high" "$sast_medium" "$sast_low" "$SAST_CRITICAL" "$SAST_HIGH" "$SAST_MEDIUM" "$SAST_LOW" "$SAST_PIPEACTION" "$POLICY_SAST"
+          
+          [ "$sca_critical" -gt 0 ] || [ "$sca_high" -gt 0 ] || [ "$sca_medium" -gt 0 ] || [ "$sca_low" -gt 0 ] && \
           check_vulnerabilities "sca" "$sca_critical" "$sca_high" "$sca_medium" "$sca_low" "$SCA_CRITICAL" "$SCA_HIGH" "$SCA_MEDIUM" "$SCA_LOW" "$SCA_PIPEACTION" "$POLICY_SCA"
+          
+          [ "$dast_critical" -gt 0 ] || [ "$dast_high" -gt 0 ] || [ "$dast_medium" -gt 0 ] || [ "$dast_low" -gt 0 ] && \
           check_vulnerabilities "dast" "$dast_critical" "$dast_high" "$dast_medium" "$dast_low" "$DAST_CRITICAL" "$DAST_HIGH" "$DAST_MEDIUM" "$DAST_LOW" "$DAST_PIPEACTION" "$POLICY_DAST"
-
-          echo "::notice::Todas as vulnerabilidades estão dentro das políticas definidas."
+          
+          echo "::group::Resultado final da análise"
+          echo "┌─────────────────────────────────────────────────────────┐"
+          echo "│ RESUMO DE VULNERABILIDADES ENCONTRADAS                  │"
+          echo "├─────────────────────────────────────────────────────────┤"
+          if [ "$has_issues" = true ]; then
+            echo "│ ❌ Status: Encontradas vulnerabilidades além do permitido │"
+          else
+            echo "│ ✅ Status: Todas vulnerabilidades dentro do aceitável     │"
+          fi
+          echo "│                                                         │"
+          echo "│ 📊 Total por categoria:                                 │"
+          echo "│                                                         │"
+          echo "│ SAST - 🔴 $sast_critical | 🟠 $sast_high | 🟡 $sast_medium | 🔵 $sast_low │"
+          echo "│ SCA  - 🔴 $sca_critical | 🟠 $sca_high | 🟡 $sca_medium | 🔵 $sca_low │"
+          echo "│ DAST - 🔴 $dast_critical | 🟠 $dast_high | 🟡 $dast_medium | 🔵 $dast_low │"
+          echo "│                                                         │"
+          echo "│ 🔗 Resultados completos disponíveis em:                 │"
+          echo "│ ${BASE_URL}/aplicacoes/${APP_ID}/scans                  │"
+          echo "└─────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
         }
 
         while true; do
@@ -1246,6 +1319,7 @@ runs:
             sleep 30
           fi
         done
+        echo "::endgroup::"
 
     - name: Finalizar e validar outputs
       id: final_outputs
