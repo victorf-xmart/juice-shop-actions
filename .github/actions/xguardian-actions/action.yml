@@ -489,7 +489,15 @@ runs:
           
           # Verifica se a política foi encontrada
           if [ -z "$policy" ] || [ "$policy" == "null" ]; then
-            echo "::warning::Política atribuída para ${scan_type} com ID ${app_policy_id} não encontrada."
+            echo "::warning::Política atribuída para ${scan_type} com ID ${app_policy_id} não encontrada nas políticas disponíveis."
+            echo "::warning::Usando política padrão com valores 0 para todos os níveis."
+            # Define valores padrão caso a política não seja encontrada
+            echo "${scan_type^^}_CRITICAL=0" >> $GITHUB_ENV
+            echo "${scan_type^^}_HIGH=0" >> $GITHUB_ENV
+            echo "${scan_type^^}_MEDIUM=0" >> $GITHUB_ENV
+            echo "${scan_type^^}_LOW=0" >> $GITHUB_ENV
+            echo "${scan_type^^}_RATING=0" >> $GITHUB_ENV
+            echo "${scan_type^^}_PIPEACTION=noAction" >> $GITHUB_ENV
             return 0
           fi
 
