@@ -19,7 +19,7 @@ jobs:
           api_email: ${{ secrets.API_EMAIL }}
           api_password: ${{ secrets.API_PASSWORD }}
           is_development: "true"
-          app_name: "nome-da-aplicacao"
+          app_name: "trocando o nome da app"
           team_id: "[1159]"
           # dast: "true"
           # site_url: "https://google-gruyere.appspot.com/624428532281904487808630263280165796082/"
