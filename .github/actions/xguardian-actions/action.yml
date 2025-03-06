@@ -646,18 +646,24 @@ runs:
         API_TOKEN: ${{ env.API_TOKEN }}
         APP_ID: ${{ env.APP_ID }}
       run: |
-        echo "::group::Políticas disponíveis na plataforma"
+        echo "::group::📋 POLÍTICAS DISPONÍVEIS NA PLATAFORMA"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ POLÍTICAS DE SEGURANÇA DISPONÍVEIS                      │"
+        echo "└─────────────────────────────────────────────────────────┘"
         echo "Buscando políticas disponíveis para cada tipo de scan..."
 
         fetch_policies() {
           local scan_type=$1
-          echo "::group::Políticas disponíveis para ${scan_type^^}"
+          echo "::group::📜 Políticas disponíveis para ${scan_type^^}"
           
           local response=$(curl -s -X GET "${AUTH_URL}/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
           if ! echo "$response" | jq '.' > /dev/null 2>&1; then
+            echo "┌─────────────────────────────────────────────────────────┐"
+            echo "│ ❌ ERRO: RESPOSTA DA API INVÁLIDA                       │"
+            echo "└─────────────────────────────────────────────────────────┘"
             echo "::error::Resposta da API não é um JSON válido: $response"
             echo "::endgroup::"
             return 1
@@ -676,19 +682,20 @@ runs:
           echo "Políticas personalizadas para ${scan_type^^}: $custom_count"
 
           if [ "$custom_count" -gt 0 ]; then
-            echo "┌───────────────────────────────────────────────────────────┐"
-            echo "│ Políticas personalizadas disponíveis para ${scan_type^^}    │"
-            echo "├───────────────────────────────────────────────────────────┤"
+            # Tabela formatada com caracteres de borda para melhor leitura
+            echo "┌───────┬────────────────────┬────────────────────┐"
+            echo "│   ID  │       NOME         │        AÇÃO        │"
+            echo "├───────┼────────────────────┼────────────────────┤"
             
-            echo "$custom_policies" | jq -r '.[] | "│ ID: \(.id) | Nome: \(.name) | Ação: \(.pipeaction) │"'
+            echo "$custom_policies" | jq -r '.[] | "│ \(.id) │ \(.name) │ \(.pipeaction) │"'
             
-            echo "└───────────────────────────────────────────────────────────┘"
+            echo "└───────┴────────────────────┴────────────────────┘"
             
             # Para informações mais detalhadas, mostrar cada política de forma organizada
-            echo "Detalhes das políticas (expandir para ver):"
-            echo "$custom_policies" | jq -r '.[] | "ID: \(.id) - \(.name)\n  Crítico: \(.critical)\n  Alto: \(.high)\n  Médio: \(.medium)\n  Baixo: \(.low)\n  Ação: \(.pipeaction)\n"'
+            echo "📊 Detalhes das políticas (expandir para ver):"
+            echo "$custom_policies" | jq -r '.[] | "ID: \(.id) - \(.name)\n  • Crítico: \(.critical)\n  • Alto: \(.high)\n  • Médio: \(.medium)\n  • Baixo: \(.low)\n  • Ação: \(.pipeaction)\n"'
           else
-            echo "Nenhuma política personalizada encontrada para ${scan_type^^}."
+            echo "ℹ️ Nenhuma política personalizada encontrada para ${scan_type^^}."
           fi
           echo "::endgroup::"
         }
@@ -697,7 +704,7 @@ runs:
         fetch_policies "sca" || echo "::warning::Falha ao buscar políticas SCA."
         fetch_policies "dast" || echo "::warning::Falha ao buscar políticas DAST."
 
-        echo "Busca de políticas concluída."
+        echo "✅ Busca de políticas concluída."
         echo "::endgroup::"
 
     - name: Obter o short_sha
