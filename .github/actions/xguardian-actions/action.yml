@@ -585,35 +585,59 @@ runs:
         API_TOKEN: ${{ env.API_TOKEN }}
         APP_ID: ${{ env.APP_ID }}
       run: |
+        echo "::group::Políticas disponíveis na plataforma"
+        echo "Buscando políticas disponíveis para cada tipo de scan..."
+
         fetch_policies() {
           local scan_type=$1
+          echo "::group::Políticas disponíveis para ${scan_type^^}"
+          
           local response=$(curl -s -X GET "${AUTH_URL}/get_policies_${scan_type}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
-          echo "$response" | jq '.' || {
+          if ! echo "$response" | jq '.' > /dev/null 2>&1; then
             echo "::error::Resposta da API não é um JSON válido: $response"
-            exit 1
-          }
-
-          local policies=$(echo "$response" | jq -r '
-            .[] | select(.name and .description) | 
-            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default") | 
-            @base64')
-
-          if [ -n "$policies" ]; then
-            echo "Políticas encontradas para ${scan_type}:"
-            echo "$policies" | while read -r policy; do
-              echo "$policy" | base64 --decode | jq '.'
-            done
-          else
-            echo "Nenhuma política encontrada para ${scan_type}."
+            echo "::endgroup::"
+            return 1
           fi
+
+          # Mostrar o número total de políticas encontradas
+          local total_policies=$(echo "$response" | jq '. | length')
+          echo "Total de políticas para ${scan_type^^}: $total_policies"
+          
+          # Filtra políticas que não sejam default
+          local custom_policies=$(echo "$response" | jq -r '
+            [.[] | select(.name and .description) | 
+            select((.name | ascii_downcase) != "default" and (.description | ascii_downcase) != "default")]')
+          
+          local custom_count=$(echo "$custom_policies" | jq '. | length')
+          echo "Políticas personalizadas para ${scan_type^^}: $custom_count"
+
+          if [ "$custom_count" -gt 0 ]; then
+            echo "┌───────────────────────────────────────────────────────────┐"
+            echo "│ Políticas personalizadas disponíveis para ${scan_type^^}    │"
+            echo "├───────────────────────────────────────────────────────────┤"
+            
+            echo "$custom_policies" | jq -r '.[] | "│ ID: \(.id) | Nome: \(.name) | Ação: \(.pipeaction) │"'
+            
+            echo "└───────────────────────────────────────────────────────────┘"
+            
+            # Para informações mais detalhadas, mostrar cada política de forma organizada
+            echo "Detalhes das políticas (expandir para ver):"
+            echo "$custom_policies" | jq -r '.[] | "ID: \(.id) - \(.name)\n  Crítico: \(.critical)\n  Alto: \(.high)\n  Médio: \(.medium)\n  Baixo: \(.low)\n  Ação: \(.pipeaction)\n"'
+          else
+            echo "Nenhuma política personalizada encontrada para ${scan_type^^}."
+          fi
+          echo "::endgroup::"
         }
 
-        fetch_policies "sast"
-        fetch_policies "sca"
-        fetch_policies "dast"
+        fetch_policies "sast" || echo "::warning::Falha ao buscar políticas SAST."
+        fetch_policies "sca" || echo "::warning::Falha ao buscar políticas SCA."
+        fetch_policies "dast" || echo "::warning::Falha ao buscar políticas DAST."
+
+        echo "Busca de políticas concluída."
+        echo "::endgroup::"
 
     - name: Obter o short_sha
       id: vars
