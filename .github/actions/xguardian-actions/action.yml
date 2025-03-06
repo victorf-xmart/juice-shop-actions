@@ -1696,3 +1696,58 @@ runs:
           echo "Detalhes: $RESPONSE_BODY"
           exit 1
         fi
+
+    - name: Resumo da execução
+      shell: bash
+      if: always()
+      env:
+        APP_ID: ${{ env.APP_ID }}
+        SCAN_ID: ${{ env.SCAN_ID }}
+        SCAN_URL: ${{ env.SCAN_URL }}
+        APP_NAME: ${{ inputs.app_name }}
+        SAST: ${{ inputs.sast }}
+        SCA: ${{ inputs.sca }}
+        DAST: ${{ inputs.dast }}
+        BASE_URL: ${{ env.BASE_URL }}
+      run: |
+        echo "::group::📊 RESUMO DA EXECUÇÃO"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ RESUMO DO SCAN DE SEGURANÇA XGUARDIAN                   │"
+        echo "└─────────────────────────────────────────────────────────┘"
+
+        # Verificar se o arquivo com o tempo de início existe
+        if [ -f "/tmp/xguardian_start_time" ]; then
+          start_time=$(cat /tmp/xguardian_start_time)
+          end_time=$(date +%s)
+          total_elapsed=$((end_time - start_time))
+          total_min=$((total_elapsed / 60))
+          total_sec=$((total_elapsed % 60))
+          
+          echo "⏱️ Tempo total de execução: ${total_min}m ${total_sec}s"
+        fi
+
+        echo ""
+        echo "🔍 Aplicação: ${APP_NAME}"
+        echo "🆔 ID da Aplicação: ${APP_ID:-'Não disponível'}"
+        echo "🔢 ID do Scan: ${SCAN_ID:-'Não disponível'}"
+
+        # Gerar um "checkmark" para cada tipo de scan habilitado
+        echo ""
+        echo "📋 Tipos de scan executados:"
+        [ "${SAST}" == "true" ] && echo "  ✅ SAST (Source Code Analysis)"
+        [ "${SCA}" == "true" ] && echo "  ✅ SCA (Software Composition Analysis)"
+        [ "${DAST}" == "true" ] && echo "  ✅ DAST (Dynamic Application Security Testing)"
+
+        # Mostrar o link para os resultados se disponível
+        if [ -n "${SCAN_URL}" ]; then
+          echo ""
+          echo "🔗 Resultados completos disponíveis em:"
+          echo "  ${SCAN_URL}"
+        else
+          echo ""
+          echo "⚠️ Link para resultados não disponível"
+        fi
+
+        echo ""
+        echo "✅ Processo de scan concluído"
+        echo "::endgroup::"
