@@ -799,38 +799,57 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         GET_UPLOAD_URL: ${{ env.GET_UPLOAD_URL }}
       run: |
-        echo "Debug: Iniciando upload com SCAN_VERSION: ${SCAN_VERSION}"
+        echo "::group::Uploading do arquivo ZIP para análise"
+        echo "Iniciando upload com SCAN_VERSION: ${SCAN_VERSION}"
 
         # Verifica se o arquivo zip existe
         filePath="./${SAFE_APP_NAME}.zip"
 
-        # echo "Debug: Diretório atual: $(pwd)"
-        # echo "Debug: Listando arquivos:"
-        # ls -la
-
-        echo "Debug: Procurando arquivo em: ${filePath}"
         if [ ! -f "${filePath}" ]; then
-          echo "Erro: Arquivo ${filePath} não encontrado"
+          echo "::error::Arquivo ${filePath} não encontrado"
+          echo "::endgroup::"
           exit 1
         fi
 
-        echo "Debug: Tamanho do arquivo:"
-        du -h "${filePath}"
+        # Obter o tamanho do arquivo para exibir no progresso
+        fileSize=$(du -h "${filePath}" | cut -f1)
+        echo "Tamanho do arquivo: ${fileSize}"
 
         # A URL já deve vir pronta para uso do endpoint anterior
-        echo "Debug: Upload URL: ${GET_UPLOAD_URL}"
+        echo "URL de Upload: ${GET_UPLOAD_URL}"
 
-        # Upload com progresso visível e verificação de status
-        echo "Iniciando upload..."
-        if curl --progress-bar --location --request PUT "${GET_UPLOAD_URL}" \
+        # Função para exibir barra de progresso
+        show_progress() {
+          local width=50
+          local percent=$1
+          local completed=$((width * percent / 100))
+          local remaining=$((width - completed))
+          local bar=$(printf "%${completed}s" | tr ' ' '#')
+          local space=$(printf "%${remaining}s")
+          printf "\rProgresso: [%s%s] %d%%" "$bar" "$space" "$percent"
+        }
+
+        # Upload com barra de progresso visível
+        echo "Iniciando upload... (isso pode levar alguns minutos dependendo do tamanho do arquivo)"
+
+        result=$(curl -# --fail --location --request PUT "${GET_UPLOAD_URL}" \
           --header 'Content-Type: application/zip' \
-          --data-binary "@${filePath}"; then
-          echo "Upload realizado com sucesso!"
+          --data-binary "@${filePath}" \
+          2>&1 | tee /dev/stderr | grep -o '[0-9]*\.[0-9]%' | tail -1)
+
+        exit_code=$?
+
+        # Garantir que a barra de progresso termina em 100%
+        if [ $exit_code -eq 0 ]; then
+          show_progress 100
+          echo -e "\nUpload realizado com sucesso!"
           echo "::notice title=XGuardian Scan::Upload concluído! Aguarde alguns segundos para obter o ID do scan..."
         else
-          echo "::error title=XGuardian Scan::Falha no upload do arquivo."
+          echo -e "\n::error title=XGuardian Scan::Falha no upload do arquivo."
+          echo "::endgroup::"
           exit 1
         fi
+        echo "::endgroup::"
 
     - name: Aguardar 30 segundos antes de buscar o ID do scan
       shell: bash
