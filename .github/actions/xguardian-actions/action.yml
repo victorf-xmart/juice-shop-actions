@@ -339,76 +339,69 @@ runs:
         # "${UPLOADER_URL}/docs#/apps/create_app_create_apps_post"
         CREATE_APP_URL="${UPLOADER_URL}/create_apps"
 
-        DATA=$(cat << EOF
-        {
-          "app_name": "${APP_NAME}",
-          "team_id": ${TEAM_ID},
-          "languages": ${LANGUAGES},
-          "description": "${DESCRIPTION}",
-          "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
-          $([[ "${MICROSERVICES}" == "true" ]] && echo ',
-          "microservices_data": ${MICROSERVICES_DATA}')
-        }
-        EOF
-        )
-
-        RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
+        # Verificar se a aplicação já existe
+        EXISTING_APP=$(curl -sS -X GET \
+          "${UPLOADER_URL}/get_apps_new?page=1&items_per_page=10" \
           -H 'accept: application/json' \
-          -H "Authorization: Bearer ${API_TOKEN}" \
-          -H 'Content-Type: application/json' \
-          -d "${DATA}")
+          -H "Authorization: Bearer ${API_TOKEN}")
 
-        # Verificar se a resposta contém a mensagem de sucesso
-        if echo "$RESPONSE" | grep -q '"sucess":"Aplicação'; then
-          echo "Aplicação criada com sucesso."
-          echo "APP_ID=N/A" >> $GITHUB_ENV
+        # Verifica se a resposta é um JSON válido
+        if ! echo "$EXISTING_APP" | jq . >/dev/null 2>&1; then
+          echo "::error::Resposta da API não é um JSON válido: $EXISTING_APP"
+          exit 1
+        fi
+
+        # Buscar o APP_ID da aplicação existente mais recente com o mesmo nome
+        APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .id' | head -n 1)
+
+        if [ -n "$APP_ID" ]; then
+          echo "APP_ID encontrado: $APP_ID para a aplicação: $APP_NAME"
+          echo "Detalhes da aplicação:"
+          echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME)'
+          echo "APP_ID=$APP_ID" >> $GITHUB_ENV
+
+          POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_sast')
+          POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_sca')
+          POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.data[] | select(.name == $NAME) | .policies_id_dast')
+
+          if [ -n "$POLICY_SAST" ]; then
+            echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
+          fi
+
+          if [ -n "$POLICY_SCA" ]; then
+            echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
+          fi
+
+          if [ -n "$POLICY_DAST" ]; then
+            echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
+          fi
         else
-          ERROR_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
-          ERROR_DETAIL=$(echo "$RESPONSE" | jq -r '.detail // empty')
-          
-          if [[ "$ERROR_STATUS" = "400" ]] || [[ "$ERROR_DETAIL" == *"já existe"* ]]; then
-            echo "A aplicação já existe. Buscando o APP_ID existente..."
-            # Buscar o APP_ID da aplicação existente
-            EXISTING_APP=$(curl -sS -X GET \
-              "${UPLOADER_URL}/get_apps_total" \
-              -H 'accept: application/json' \
-              -H "Authorization: Bearer ${API_TOKEN}" )
-            
-            # Verifica se a resposta é um JSON válido
-            if ! echo "$EXISTING_APP" | jq . >/dev/null 2>&1; then
-              echo "::error::Resposta da API não é um JSON válido: $EXISTING_APP"
-              exit 1
-            fi
+          echo "A aplicação não existe. Criando nova aplicação..."
+          DATA=$(cat << EOF
+          {
+            "app_name": "${APP_NAME}",
+            "team_id": ${TEAM_ID},
+            "languages": ${LANGUAGES},
+            "description": "${DESCRIPTION}",
+            "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
+            $([[ "${MICROSERVICES}" == "true" ]] && echo ',
+            "microservices_data": ${MICROSERVICES_DATA}')
+          }
+          EOF
+          )
 
-            APP_ID=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .id')
+          RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "${DATA}")
 
-            if [ -n "$APP_ID" ]; then
-              echo "APP_ID encontrado: $APP_ID para a aplicação: $APP_NAME"
-              echo "Detalhes da aplicação:"
-              echo "$EXISTING_APP" | jq --arg NAME "$APP_NAME" '.[] | select(.name == $NAME)'
-              echo "APP_ID=$APP_ID" >> $GITHUB_ENV
-
-              POLICY_SAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sast')
-              POLICY_SCA=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_sca')
-              POLICY_DAST=$(echo "$EXISTING_APP" | jq -r --arg NAME "$APP_NAME" '.[] | select(.name == $NAME) | .policies_id_dast')
-
-              if [ -n "$POLICY_SAST" ]; then
-                echo "POLICY_SAST=$POLICY_SAST" >> $GITHUB_ENV
-              fi
-
-              if [ -n "$POLICY_SCA" ]; then
-                echo "POLICY_SCA=$POLICY_SCA" >> $GITHUB_ENV
-              fi
-
-              if [ -n "$POLICY_DAST" ]; then
-                echo "POLICY_DAST=$POLICY_DAST" >> $GITHUB_ENV
-              fi
-            else
-              echo "::error::Não foi possível encontrar o APP_ID da aplicação existente"
-              exit 1
-            fi
+          # Verificar se a resposta contém a mensagem de sucesso
+          if echo "$RESPONSE" | grep -q '"sucess":"Aplicação'; then
+            echo "Aplicação criada com sucesso."
+            echo "APP_ID=N/A" >> $GITHUB_ENV
           else
-            echo "::error::Erro inesperado na criação/verificação da aplicação"
+            echo "::error::Erro inesperado na criação da aplicação"
             echo "$RESPONSE"
             exit 1
           fi
