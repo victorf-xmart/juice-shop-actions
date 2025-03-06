@@ -1117,9 +1117,14 @@ runs:
         APP_ID: ${{ env.APP_ID }}
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
       run: |
-        echo "::group::Monitorando status do scan"
+        echo "::group::⏳ Monitorando status do scan"
         SCAN_STATUS=""
         start_time=$(date +%s)
+
+        echo "🔄 Aguardando finalização do scan (versão: ${SCAN_VERSION})"
+        echo "   Este processo pode levar alguns minutos..."
+        echo "   A ferramenta verificará o status periodicamente."
+        echo ""
 
         check_scan_status() {
           local response=$(curl -s -X GET "${REPORTER_URL}/get_scan_pagination/${APP_ID}?page=1&items_per_page=10" \
@@ -1127,8 +1132,7 @@ runs:
             -H "Authorization: Bearer ${API_TOKEN}")
 
           if ! echo "$response" | jq . >/dev/null 2>&1; then
-            echo "Debug: Resposta não é um JSON válido:"
-            echo "$response"
+            echo "⚠️ Resposta não é um JSON válido."
             return 1
           fi
 
@@ -1136,43 +1140,87 @@ runs:
 
           if [ -n "$SCAN_DATA" ] && [ "$SCAN_DATA" != "null" ]; then
             SCAN_STATUS=$(echo "$SCAN_DATA" | jq -r '.scan_status')
-            echo "Scan status: $SCAN_STATUS"
+            return 0
           else
-            echo "Scan não encontrado na resposta."
+            echo "⚠️ Scan não encontrado na resposta."
             return 1
           fi
         }
 
+        # Visual para acompanhamento do progresso
+        display_progress() {
+          local elapsed=$1
+          local status=$2
+          local elapsed_min=$((elapsed / 60))
+          local elapsed_sec=$((elapsed % 60))
+          
+          if [ "$status" == "RUNNING" ]; then
+            status_emoji="🔄"
+            status_text="EM EXECUÇÃO"
+          elif [ "$status" == "FINISHED" ]; then
+            status_emoji="✅"
+            status_text="FINALIZADO"
+          elif [ "$status" == "PENDING" ]; then
+            status_emoji="⏳"
+            status_text="PENDENTE"
+          elif [ "$status" == "FAILED" ]; then
+            status_emoji="❌"
+            status_text="FALHOU"
+          else
+            status_emoji="❓"
+            status_text="DESCONHECIDO"
+          fi
+          
+          echo "┌──────────────────────────────────────────────────┐"
+          echo "│ Status do Scan: ${status_emoji} ${status_text}"
+          echo "│ Tempo decorrido: ${elapsed_min}m ${elapsed_sec}s"
+          echo "└──────────────────────────────────────────────────┘"
+        }
+
+        # Loop principal para monitorar o status
         for i in {1..30}; do
           current_time=$(date +%s)
           elapsed=$((current_time - start_time))
-          elapsed_min=$((elapsed / 60))
-          elapsed_sec=$((elapsed % 60))
           
-          echo "Verificando status do scan (tentativa $i de 30, tempo decorrido: ${elapsed_min}m ${elapsed_sec}s)..."
+          echo "🔍 Verificando status (tentativa $i de 30)..."
+          
           if check_scan_status; then
+            display_progress $elapsed "$SCAN_STATUS"
+            
             if [ "$SCAN_STATUS" == "FINISHED" ]; then
-              echo "Scan finalizado com sucesso após ${elapsed_min}m ${elapsed_sec}s."
+              echo "✅ Scan finalizado com sucesso!"
+              echo "::notice title=XGuardian Scan::Scan finalizado com sucesso!"
               break
-            elif [ "$SCAN_STATUS" == "RUNNING" ]; then
-              echo "Scan ainda em andamento. Aguardando 2 minutos..."
+            elif [ "$SCAN_STATUS" == "RUNNING" ] || [ "$SCAN_STATUS" == "PENDING" ]; then
+              echo "⏳ Scan ainda em andamento. Aguardando 2 minutos antes da próxima verificação..."
               sleep 120
+            elif [ "$SCAN_STATUS" == "FAILED" ]; then
+              echo "::error::❌ Scan falhou durante a execução."
+              echo "::endgroup::"
+              exit 1
             else
-              echo "Status inesperado do scan: $SCAN_STATUS"
+              echo "⚠️ Status inesperado do scan: $SCAN_STATUS"
               echo "::endgroup::"
               exit 1
             fi
           else
-            echo "Erro ao verificar status do scan. Tentando novamente em 2 minutos..."
+            echo "⚠️ Erro ao verificar status do scan. Tentando novamente em 2 minutos..."
             sleep 120
           fi
         done
 
         if [ "$SCAN_STATUS" != "FINISHED" ]; then
-          echo "::error::Scan não foi finalizado após múltiplas tentativas."
+          echo "::error::❌ Scan não foi finalizado após múltiplas verificações (timeout)."
           echo "::endgroup::"
           exit 1
         fi
+
+        # Mostrar tempo total de execução
+        end_time=$(date +%s)
+        total_elapsed=$((end_time - start_time))
+        total_min=$((total_elapsed / 60))
+        total_sec=$((total_elapsed % 60))
+        echo "⏱️ Tempo total de execução do scan: ${total_min}m ${total_sec}s"
         echo "::endgroup::"
 
     - name: Buscar vulnerabilidades e comparar com políticas
