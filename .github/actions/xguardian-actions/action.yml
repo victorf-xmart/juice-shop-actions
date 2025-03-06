@@ -325,16 +325,15 @@ runs:
     - name: Instalar dependências
       shell: bash
       run: |
-        echo "Atualizando pacotes..."
-        sudo apt-get update
-        # Instalar todas as dependências necessárias de uma vez
-        sudo apt-get install -y curl jq zip
+        echo "::group::Instalação de dependências"
+        echo "📦 Atualizando pacotes do sistema..."
+        sudo apt-get update -qq > /dev/null
 
-        # Instalar GitHub CLI
-        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-        && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-        && sudo apt update \
+        echo "📥 Instalando ferramentas necessárias (curl, jq, zip)..."
+        sudo apt-get install -y --no-install-recommends curl jq zip > /dev/null
+
+        echo "✅ Dependências básicas instaladas com sucesso!"
+        echo "::endgroup::"
 
     - name: Fazer login na API e armazenar o token
       shell: bash
