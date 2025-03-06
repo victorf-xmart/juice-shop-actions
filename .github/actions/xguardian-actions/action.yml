@@ -1380,23 +1380,61 @@ runs:
           
           echo "::group::Resultado final da análise"
           echo "┌─────────────────────────────────────────────────────────┐"
-          echo "│ RESUMO DE VULNERABILIDADES ENCONTRADAS                  │"
+          echo "│ 📊 RESUMO DA ANÁLISE DE SEGURANÇA XGUARDIAN             │"
           echo "├─────────────────────────────────────────────────────────┤"
           if [ "$has_issues" = true ]; then
-            echo "│ ❌ Status: Encontradas vulnerabilidades além do permitido │"
+            echo "│ ❌ STATUS: VULNERABILIDADES ACIMA DO LIMITE PERMITIDO    │"
           else
-            echo "│ ✅ Status: Todas vulnerabilidades dentro do aceitável     │"
+            echo "│ ✅ STATUS: TODAS VULNERABILIDADES DENTRO DO ACEITÁVEL    │"
           fi
           echo "│                                                         │"
-          echo "│ 📊 Total por categoria:                                 │"
-          echo "│                                                         │"
-          echo "│ SAST - 🔴 $sast_critical | 🟠 $sast_high | 🟡 $sast_medium | 🔵 $sast_low │"
-          echo "│ SCA  - 🔴 $sca_critical | 🟠 $sca_high | 🟡 $sca_medium | 🔵 $sca_low │"
-          echo "│ DAST - 🔴 $dast_critical | 🟠 $dast_high | 🟡 $dast_medium | 🔵 $dast_low │"
-          echo "│                                                         │"
-          echo "│ 🔗 Resultados completos disponíveis em:                 │"
+          echo "│ 📈 TOTAL POR CATEGORIA:                                 │"
+          echo "├─────────────────────────────────────────────────────────┤"
+          
+          # SAST
+          if [ "$sast_critical" -gt 0 ] || [ "$sast_high" -gt 0 ] || [ "$sast_medium" -gt 0 ] || [ "$sast_low" -gt 0 ]; then
+            echo "│ SAST (Análise de Código Fonte):                         │"
+            echo "│  🔴 CRÍTICO:  $sast_critical"
+            echo "│  🟠 ALTO:     $sast_high"
+            echo "│  🟡 MÉDIO:    $sast_medium"
+            echo "│  🔵 BAIXO:    $sast_low"
+            echo "│                                                         │"
+          fi
+          
+          # SCA
+          if [ "$sca_critical" -gt 0 ] || [ "$sca_high" -gt 0 ] || [ "$sca_medium" -gt 0 ] || [ "$sca_low" -gt 0 ]; then
+            echo "│ SCA (Análise de Dependências):                          │"
+            echo "│  🔴 CRÍTICO:  $sca_critical"
+            echo "│  🟠 ALTO:     $sca_high"
+            echo "│  🟡 MÉDIO:    $sca_medium"
+            echo "│  🔵 BAIXO:    $sca_low"
+            echo "│                                                         │"
+          fi
+          
+          # DAST
+          if [ "$dast_critical" -gt 0 ] || [ "$dast_high" -gt 0 ] || [ "$dast_medium" -gt 0 ] || [ "$dast_low" -gt 0 ]; then
+            echo "│ DAST (Testes Dinâmicos):                                │"
+            echo "│  🔴 CRÍTICO:  $dast_critical"
+            echo "│  🟠 ALTO:     $dast_high"
+            echo "│  🟡 MÉDIO:    $dast_medium"
+            echo "│  🔵 BAIXO:    $dast_low"
+            echo "│                                                         │"
+          fi
+          
+          echo "├─────────────────────────────────────────────────────────┤"
+          echo "│ 🔗 RESULTADOS COMPLETOS DISPONÍVEIS EM:                 │"
           echo "│ ${BASE_URL}/aplicacoes/${APP_ID}/scans                  │"
           echo "└─────────────────────────────────────────────────────────┘"
+          
+          # Adicionar tempo total de execução
+          if [ -f "/tmp/xguardian_start_time" ]; then
+            start_time=$(cat /tmp/xguardian_start_time)
+            current_time=$(date +%s)
+            elapsed=$((current_time - start_time))
+            elapsed_min=$((elapsed / 60))
+            elapsed_sec=$((elapsed % 60))
+            echo "⏱️ Tempo total de execução: ${elapsed_min}m ${elapsed_sec}s"
+          fi
           echo "::endgroup::"
         }
 
