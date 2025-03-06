@@ -709,32 +709,35 @@ runs:
         API_TOKEN: ${{ env.API_TOKEN }}
       run: |
         echo "::group::Preparando scan SAST/SCA"
-        echo "Configurando scan com as seguintes opções:"
-        echo "- APP_ID: ${APP_ID}"
-        echo "- SCAN_VERSION: ${SCAN_VERSION}"
-        echo "- SAST: ${SAST}"
-        echo "- SCA: ${SCA}"
-        echo "- TRANSLATE: ${TRANSLATE}"
-        echo "- PDF: ${PDF}"
-        echo "::endgroup::"        
+        echo "📋 Configurando scan com as seguintes opções:"
+        echo "  • APP_ID: ${APP_ID}"
+        echo "  • SCAN_VERSION: ${SCAN_VERSION}"
+        echo "  • SAST: ${SAST}"
+        echo "  • SCA: ${SCA}"
+        echo "  • TRANSLATE: ${TRANSLATE}"
+        echo "  • PDF: ${PDF}"
 
         # Verificar se o APP_ID é N/A e buscar o ID correto
         if [ "${APP_ID}" = "N/A" ]; then
-          echo "APP_ID é N/A, buscando o ID correto..."
+          echo "🔍 APP_ID é N/A, buscando o ID correto..."
           RESPONSE=$(curl -sS -X GET "${UPLOADER_URL}/get_apps_new?page=1&items_per_page=10" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}")
 
-          echo "Debug: Resposta da API: $RESPONSE"
+          echo "::group::Resposta detalhada da API (debug)"
+          echo "$RESPONSE"
+          echo "::endgroup::"
 
           APP_ID=$(echo "$RESPONSE" | jq -r --arg NAME "${{ inputs.app_name }}" '.data[] | select(.name == $NAME) | .id' | head -n 1)
 
           if [ -z "$APP_ID" ]; then
-            echo "::error::Não foi possível encontrar o APP_ID para a aplicação ${inputs.app_name}"
+            echo "❌ Não foi possível encontrar o APP_ID para a aplicação ${inputs.app_name}"
+            echo "::error::Não foi possível encontrar o APP_ID para a aplicação ${{ inputs.app_name }}"
+            echo "::endgroup::"
             exit 1
           fi
 
-          echo "APP_ID encontrado: $APP_ID"
+          echo "✅ APP_ID encontrado: $APP_ID"
           echo "APP_ID=$APP_ID" >> $GITHUB_ENV
         fi
 
@@ -747,14 +750,18 @@ runs:
           "file_type": "application/zip",
           "sca": "${SCA}",
           "sast": "${SAST}",
-          "translate": "false", 
+          "translate": "${TRANSLATE}", 
           "exclude": "${EXCLUDE}",
           "pdf": "${PDF}"
         }
         EOF
         )
 
-        echo "Debug: DATA (raw): ${DATA}"
+        echo "::group::Payload da requisição (para debug)"
+        echo "$DATA" | jq '.' || echo "$DATA"
+        echo "::endgroup::"
+
+        echo "🚀 Enviando solicitação para obter URL de upload..."
 
         RESPONSE=$(curl -sS -X POST "${UPLOAD_URL}" \
             -H 'accept: application/json' \
@@ -762,17 +769,25 @@ runs:
             -H "Authorization: Bearer ${API_TOKEN}" \
             -d "${DATA}")
 
-        echo "Resposta completa da solicitação: ${RESPONSE}"
+        echo "::group::Resposta completa da API (para debug)"
+        echo "$RESPONSE" | jq '.' || echo "$RESPONSE"
+        echo "::endgroup::"
 
         GET_UPLOAD_URL=$(echo "${RESPONSE}" | jq -r '.url')
 
         if [ -z "$GET_UPLOAD_URL" ] || [ "$GET_UPLOAD_URL" = "null" ]; then
-          echo "Erro: Não foi possível obter a URL de upload"
+          echo "❌ Erro: Não foi possível obter a URL de upload"
+          echo "::error::Não foi possível obter a URL de upload. Verifique a resposta da API."
+          echo "::endgroup::"
           exit 1
         fi
 
-        echo "URL de Upload: ${GET_UPLOAD_URL}"
+        echo "✅ URL de upload obtida com sucesso"
+        # Mostrar apenas parte inicial da URL para evitar poluir o log
+        URL_PREVIEW=$(echo "${GET_UPLOAD_URL}" | cut -c 1-90)
+        echo "🔗 URL de Upload: ${URL_PREVIEW}..."
         echo "GET_UPLOAD_URL=${GET_UPLOAD_URL}" >> $GITHUB_ENV
+        echo "::endgroup::"
 
     - name: Realizar o scan DAST
       if: ${{ inputs.dast == 'true' }}
