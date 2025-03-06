@@ -1025,13 +1025,20 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         GET_UPLOAD_URL: ${{ env.GET_UPLOAD_URL }}
       run: |
-        echo "::group::Uploading do arquivo ZIP para análise"
-        echo "Iniciando upload com SCAN_VERSION: ${SCAN_VERSION}"
+        echo "::group::📤 UPLOAD DE ARQUIVOS PARA ANÁLISE"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ ENVIANDO ARQUIVOS PARA SCANNING                         │"
+        echo "└─────────────────────────────────────────────────────────┘"
+
+        echo "🔖 Iniciando upload com SCAN_VERSION: ${SCAN_VERSION}"
 
         # Verifica se o arquivo zip existe
         filePath="./${SAFE_APP_NAME}.zip"
 
         if [ ! -f "${filePath}" ]; then
+          echo "┌─────────────────────────────────────────────────────────┐"
+          echo "│ ❌ ERRO: ARQUIVO ZIP NÃO ENCONTRADO                     │"
+          echo "└─────────────────────────────────────────────────────────┘"
           echo "::error::Arquivo ${filePath} não encontrado"
           echo "::endgroup::"
           exit 1
@@ -1039,24 +1046,24 @@ runs:
 
         # Obter o tamanho do arquivo para exibir no progresso
         fileSize=$(du -h "${filePath}" | cut -f1)
-        echo "Tamanho do arquivo: ${fileSize}"
+        echo "📊 Tamanho do arquivo: ${fileSize}"
 
         # A URL já deve vir pronta para uso do endpoint anterior
-        echo "URL de Upload: ${GET_UPLOAD_URL}"
+        echo "🔗 URL de Upload: ${GET_UPLOAD_URL:0:60}..."
 
-        # Função para exibir barra de progresso
+        # Função para exibir barra de progresso mais visual
         show_progress() {
           local width=50
           local percent=$1
           local completed=$((width * percent / 100))
           local remaining=$((width - completed))
-          local bar=$(printf "%${completed}s" | tr ' ' '#')
+          local bar=$(printf "%${completed}s" | tr ' ' '█')
           local space=$(printf "%${remaining}s")
-          printf "\rProgresso: [%s%s] %d%%" "$bar" "$space" "$percent"
+          printf "\r📤 Progresso: [%s%s] %d%%" "$bar" "$space" "$percent"
         }
 
         # Upload com barra de progresso visível
-        echo "Iniciando upload... (isso pode levar alguns minutos dependendo do tamanho do arquivo)"
+        echo "🚀 Iniciando upload... (isso pode levar alguns minutos dependendo do tamanho do arquivo)"
 
         result=$(curl -# --fail --location --request PUT "${GET_UPLOAD_URL}" \
           --header 'Content-Type: application/zip' \
@@ -1068,10 +1075,15 @@ runs:
         # Garantir que a barra de progresso termina em 100%
         if [ $exit_code -eq 0 ]; then
           show_progress 100
-          echo -e "\nUpload realizado com sucesso!"
+          echo -e "\n┌─────────────────────────────────────────────────────────┐"
+          echo "│ ✅ UPLOAD CONCLUÍDO COM SUCESSO                          │"
+          echo "└─────────────────────────────────────────────────────────┘"
           echo "::notice title=XGuardian Scan::Upload concluído! Aguarde alguns segundos para obter o ID do scan..."
         else
-          echo -e "\n::error title=XGuardian Scan::Falha no upload do arquivo."
+          echo -e "\n┌─────────────────────────────────────────────────────────┐"
+          echo "│ ❌ FALHA NO UPLOAD DO ARQUIVO                            │"
+          echo "└─────────────────────────────────────────────────────────┘"
+          echo "::error title=XGuardian Scan::Falha no upload do arquivo."
           echo "::endgroup::"
           exit 1
         fi
