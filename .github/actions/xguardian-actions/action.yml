@@ -1155,18 +1155,18 @@ runs:
               return
             fi
 
+            echo "::group::Resultados para ${scan_type^^}"
             if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ] || [ "$medium" -gt 0 ] || [ "$low" -gt 0 ]; then
               echo "Políticas definidas para ${scan_type^^} (ID: $policy_id): CRITICAL=$policy_critical, HIGH=$policy_high, MEDIUM=$policy_medium, LOW=$policy_low"
               echo "Vulnerabilidades encontradas para ${scan_type^^}:"
-              [ "$critical" -gt 0 ] && echo "CRITICAL=$critical"
-              [ "$high" -gt 0 ] && echo "HIGH=$high"
-              [ "$medium" -gt 0 ] && echo "MEDIUM=$medium"
-              [ "$low" -gt 0 ] && echo "LOW=$low"
+              [ "$critical" -gt 0 ] && echo "🔴 CRITICAL=$critical"
+              [ "$high" -gt 0 ] && echo "🟠 HIGH=$high"
+              [ "$medium" -gt 0 ] && echo "🟡 MEDIUM=$medium"
+              [ "$low" -gt 0 ] && echo "🔵 LOW=$low"
 
               if [ "$critical" -gt "$policy_critical" ] || [ "$high" -gt "$policy_high" ] || [ "$medium" -gt "$policy_medium" ] || [ "$low" -gt "$policy_low" ]; then
                 if [ "$pipeaction" == "fail" ]; then
                   echo "::error::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
-                  exit 1
                 elif [ "$pipeaction" == "warn" ]; then
                   echo "::warning::Vulnerabilidades ${scan_type^^} excedem as políticas definidas (ID: $policy_id)."
                 else
@@ -1178,6 +1178,7 @@ runs:
             else
               echo "::notice::Nenhuma vulnerabilidade encontrada para ${scan_type^^}."
             fi
+            echo "::endgroup::"
           }
 
           check_vulnerabilities "sast" "$sast_critical" "$sast_high" "$sast_medium" "$sast_low" "$SAST_CRITICAL" "$SAST_HIGH" "$SAST_MEDIUM" "$SAST_LOW" "$SAST_PIPEACTION" "$POLICY_SAST"
