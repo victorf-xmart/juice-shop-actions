@@ -1,4 +1,4 @@
-name: Security Scan # commit test v1.0.2 - Que erro tá dando na rota get_apps_new ?
+name: Security Scan # commit test v1.0.3 - Que erro tá dando na rota get_apps_new ?
 on:
   push:
     branches:
