@@ -278,6 +278,50 @@ runs:
         fi
         echo "::endgroup::"
 
+    - name: Exibir informações iniciais do processo
+      shell: bash
+      env:
+        APP_NAME: ${{ inputs.app_name }}
+        SAST: ${{ inputs.sast }}
+        SCA: ${{ inputs.sca }}
+        DAST: ${{ inputs.dast }}
+        SITE_URL: ${{ inputs.site_url }}
+        BASE_URL: ${{ env.BASE_URL }}
+        REPORTER_URL: ${{ env.REPORTER_URL }}
+        UPLOADER_URL: ${{ env.UPLOADER_URL }}
+        AUTH_URL: ${{ env.AUTH_URL }}
+        SCAN_DIR: ${{ inputs.scan_directory }}
+        DEVELOPMENT: ${{ inputs.is_development }}
+      run: |
+        echo "::group::XGuardian Security Scan - Iniciando"
+        echo "┌─────────────────────────────────────────────────────────┐"
+        echo "│ XGuardian Security Scan - Configuração Inicial          │"
+        echo "├─────────────────────────────────────────────────────────┤"
+        echo "│ Aplicação: ${APP_NAME}"
+        echo "│ Ambiente: $([ "${DEVELOPMENT}" == "true" ] && echo "Desenvolvimento" || echo "Produção")"
+        echo "│ Tipos de scan habilitados:"
+        [ "${SAST}" == "true" ] && echo "│  ✅ SAST - Source Code Analysis"
+        [ "${SCA}" == "true" ] && echo "│  ✅ SCA - Software Composition Analysis"
+        [ "${DAST}" == "true" ] && echo "│  ✅ DAST - Dynamic Application Security Testing"
+
+        if [ "${DAST}" == "true" ]; then
+          echo "│  🔗 URL alvo DAST: ${SITE_URL}"
+        fi
+
+        echo "│"
+        echo "│ Diretório para scan: ${SCAN_DIR}"
+        echo "│"
+        echo "│ URLs XGuardian:"
+        echo "│  🔗 Base: ${BASE_URL}"
+        echo "│  🔗 Uploader: ${UPLOADER_URL}"
+        echo "│  🔗 Reporter: ${REPORTER_URL}"
+        echo "│  🔗 Auth: ${AUTH_URL}"
+        echo "└─────────────────────────────────────────────────────────┘"
+        echo "::endgroup::"
+
+        # Criar log com hora de início para cálculo de duração total
+        echo "$(date +%s)" > /tmp/xguardian_start_time
+
     - name: Instalar dependências
       shell: bash
       run: |
