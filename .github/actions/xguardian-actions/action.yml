@@ -237,19 +237,31 @@ runs:
 
         renew_token() {
             echo "Renovando token..."
-            response=$(curl -s -X POST "${AUTH_URL}/login" \
-            -H 'accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -d '{"email": "'${API_EMAIL}'", "password": "'${API_PASSWORD}'"}' | jq -r '.token')
+            local max_attempts=3
+            local attempt=1
             
-          if [[ -n "$response" && "$response" != "null" ]]; then
-            echo "Novo token obtido com sucesso."
-            echo "API_TOKEN=$response" >> $GITHUB_ENV
-            API_TOKEN=$response
-          else
-            echo "::error::Falha ao obter novo token."
+            while [ $attempt -le $max_attempts ]; do
+                echo "Tentativa $attempt de $max_attempts para renovar token..."
+                
+                response=$(curl -s --connect-timeout 10 --max-time 30 -X POST "${AUTH_URL}/login" \
+                  -H 'accept: application/json' \
+                  -H 'Content-Type: application/json' \
+                  -d '{"email": "'${API_EMAIL}'", "password": "'${API_PASSWORD}'"}' | jq -r '.token')
+                
+                if [[ -n "$response" && "$response" != "null" ]]; then
+                  echo "Novo token obtido com sucesso."
+                  echo "API_TOKEN=$response" >> $GITHUB_ENV
+                  API_TOKEN=$response
+                  return 0
+                fi
+                
+                echo "Falha na tentativa $attempt. Aguardando antes de tentar novamente..."
+                sleep $(( attempt * 5 ))
+                attempt=$((attempt+1))
+            done
+            
+            echo "::error::Todas as tentativas de renovação de token falharam."
             exit 1
-          fi
         }
 
         echo "Verificando validade do token..."
