@@ -1001,31 +1001,33 @@ runs:
         SCAN_VERSION: ${{ format('{0}-{1}', inputs.app_name, steps.vars.outputs.short_sha) }}
         APP_NAME: ${{ inputs.app_name }}
       run: |
-        echo "::group::Buscando ID do scan"
+        echo "::group::Buscando ID e resultados do scan"
+        echo "🔍 Iniciando busca pelo ID do scan com versão: ${SCAN_VERSION}"
+        echo "📋 Aplicação: ${APP_NAME} (ID: ${APP_ID})"
+
         # Verificar se já temos o scan_id definido em uma execução anterior
         if [ -f "/tmp/xguardian_scan_complete" ] && [ -s "/tmp/xguardian_scan_complete" ]; then
-          echo "Arquivo de estado do scan encontrado. Verificando dados..."
+          echo "🔄 Arquivo de estado do scan encontrado. Verificando dados..."
           IFS=':' read -r stored_app_id stored_scan_id < /tmp/xguardian_scan_complete
           
           if [ -n "$stored_app_id" ] && [ -n "$stored_scan_id" ]; then
-            echo "Usando ID de scan previamente encontrado: $stored_scan_id"
+            echo "✅ Usando ID de scan previamente encontrado: $stored_scan_id"
             echo "APP_ID=${stored_app_id}" >> $GITHUB_ENV
             echo "SCAN_ID=${stored_scan_id}" >> $GITHUB_ENV
             echo "SCAN_URL=${BASE_URL}/aplicacoes/${stored_app_id}/scans" >> $GITHUB_ENV
+            echo "::endgroup::"
             exit 0
           fi
         fi
 
-        echo "Debug: Buscando scan com versão: ${SCAN_VERSION}"
-        echo "Debug: APP_ID: ${APP_ID}"
-
         # URL da API (apenas primeira página)
         API_URL="${REPORTER_URL}/get_scan_pagination/${APP_ID}?page=1&items_per_page=10"
-        echo "Debug: URL da API: ${API_URL}"
+        echo "🌐 URL da API: ${API_URL}"
 
         # Tenta obter o scan ID por até 5 minutos (30 tentativas, 10 segundos cada)
+        echo "⏳ Iniciando pesquisa pelo scan criado (até 5 minutos)..."
         for i in {1..30}; do
-          echo "Tentativa $i de 30..."
+          echo "🔄 Tentativa $i de 30..."
           
           # Captura a resposta completa
           RESPONSE=$(curl -sS -X GET "${API_URL}" \
@@ -1034,19 +1036,26 @@ runs:
           
           # Verifica se a resposta é um JSON válido
           if ! echo "$RESPONSE" | jq . >/dev/null 2>&1; then
-            echo "Debug: Resposta não é um JSON válido:"
+            echo "⚠️ Resposta não é um JSON válido:"
             echo "$RESPONSE"
             if [ $i -lt 30 ]; then
-              echo "Aguardando próxima tentativa..."
+              echo "⏱️ Aguardando próxima tentativa..."
               sleep 10
               continue
             fi
+            echo "::error::❌ API retornou resposta inválida após múltiplas tentativas."
+            echo "::endgroup::"
             exit 1
           fi
 
           # Debug da resposta (limitado aos campos relevantes)
-          echo "Debug: Scans encontrados:"
-          echo "$RESPONSE" | jq -r '.data[] | {scanuuid, id, scan_status, created_at}'
+          echo "📋 Scans encontrados:"
+          SCANS_INFO=$(echo "$RESPONSE" | jq -r '.data[] | "ID: \(.id) | Versão: \(.scanuuid) | Status: \(.scan_status) | Data: \(.created_at)"')
+          if [ -z "$SCANS_INFO" ]; then
+            echo "📭 Nenhum scan encontrado para esta aplicação."
+          else
+            echo "$SCANS_INFO"
+          fi
           
           # Verifica se a resposta tem a estrutura esperada e contém dados
           if [ "$(echo "$RESPONSE" | jq -r 'has("data")')" = "true" ] && [ "$(echo "$RESPONSE" | jq -r '.data | length')" -gt 0 ]; then
@@ -1068,6 +1077,7 @@ runs:
               # Cria arquivo de estado com os dados
               echo "${APP_ID}:${SCAN_ID}" > /tmp/xguardian_scan_complete
               
+              echo "✅ Scan encontrado com sucesso!"
               echo "::notice title=XGuardian Scan::Scan encontrado com sucesso!"
               echo "::notice title=XGuardian Scan::Aplicação: ${APP_NAME}"
               echo "::notice title=XGuardian Scan::ID da Aplicação (APP_ID): ${APP_ID}"
@@ -1076,25 +1086,25 @@ runs:
               echo "::notice title=XGuardian Scan::Criado em: ${CREATED_AT}"
               break
             else
-              echo "Debug: SCAN_ID não encontrado nesta tentativa"
-              echo "Debug: Procurando por versão: $SCAN_VERSION"
+              echo "🔍 Scan com versão '${SCAN_VERSION}' ainda não encontrado nesta tentativa."
             fi
           else
-            echo "Debug: Resposta não contém dados válidos"
+            echo "⚠️ Resposta da API não contém dados válidos de scans."
           fi
           
           if [ $i -lt 30 ]; then
-            echo "Scan ainda não encontrado. Aguardando..."
+            echo "⏱️ Scan ainda não encontrado. Aguardando 10 segundos..."
             sleep 10
           fi
         done
 
         # Verifica se o SCAN_ID foi encontrado
-        if [ -z "$SCAN_ID" ] || [ "$SCAN_ID" == "null" ]; then
-          echo "::error title=XGuardian Scan::Não foi possível encontrar o ID do Scan após múltiplas tentativas."
+        if [ -z "${SCAN_ID:-}" ] || [ "${SCAN_ID:-null}" == "null" ]; then
+          echo "::error title=XGuardian Scan::❌ Não foi possível encontrar o ID do Scan após múltiplas tentativas."
           echo "::error title=XGuardian Scan::Versão procurada: ${SCAN_VERSION}"
           echo "::error title=XGuardian Scan::Última resposta da API:"
           echo "$RESPONSE" | jq '.' || echo "$RESPONSE"
+          echo "::endgroup::"
           exit 1
         fi
         echo "::endgroup::"
