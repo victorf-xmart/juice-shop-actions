@@ -378,26 +378,26 @@ runs:
         else
           echo "A aplicação não existe. Criando nova aplicação..."
 
-          # Write the JSON to a temporary file and then read it
-          cat > /tmp/app_data.json << 'EOJSON'
-          {
-            "app_name": "${APP_NAME}",
-            "team_id": ${TEAM_ID},
-            "languages": ${LANGUAGES},
-            "description": "${DESCRIPTION}",
-            "microservices": $([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
-            $([[ "${MICROSERVICES}" == "true" ]] && echo ',"microservices_data": ${MICROSERVICES_DATA}')
-          }
-          EOJSON
-
-          # Process the temporary file to replace variables
-          envsubst < /tmp/app_data.json > /tmp/app_data_processed.json
+          # Create JSON data more safely using a different approach
+          JSON_CONTENT='{'
+          JSON_CONTENT+='"app_name": "'"${APP_NAME}"'",'
+          JSON_CONTENT+='"team_id": '"${TEAM_ID}"','
+          JSON_CONTENT+='"languages": '"${LANGUAGES}"','
+          JSON_CONTENT+='"description": "'"${DESCRIPTION}"'",'
+          JSON_CONTENT+='"microservices": '"$([[ "${MICROSERVICES}" == "true" ]] && echo true || echo false)
+          
+          # Add microservices_data only if microservices is true
+          if [[ "${MICROSERVICES}" == "true" ]]; then
+            JSON_CONTENT+=',"microservices_data": '"${MICROSERVICES_DATA}"
+          fi
+          
+          JSON_CONTENT+='}'
           
           RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}" \
             -H 'Content-Type: application/json' \
-            -d @/tmp/app_data_processed.json)
+            -d "${JSON_CONTENT}")
 
           # Verificar se a resposta contém a mensagem de sucesso
           if echo "$RESPONSE" | grep -q '"sucess":"Aplicação'; then
