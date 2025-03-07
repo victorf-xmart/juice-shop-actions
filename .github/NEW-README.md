@@ -1,12 +1,18 @@
-# Scan Automático com XGuardian 🔍
+# XGuardian Security Scan Action 🔍
 
-Este Action executa varreduras de segurança automatizadas usando o XGuardian. Ele verifica seu código fonte, conecta-se à API XGuardian, gerencia aplicações e realiza análises de segurança completas.
+Este GitHub Action executa varreduras de segurança automatizadas usando o XGuardian, permitindo análises de segurança contínuas diretamente nos seus workflows do GitHub. Integre facilmente análises de vulnerabilidades no seu pipeline de desenvolvimento.
 
-> Compatível com análises SAST (Static Application Security Testing), SCA (Software Composition Analysis) e DAST (Dynamic Application Security Testing), permitindo uma abordagem completa de segurança para seu código. Este action pode ser facilmente integrado em qualquer ponto do seu workflow.
+> **Recursos disponíveis:**
+>
+> - 🛡️ **SAST** (Static Application Security Testing): Análise estática do código-fonte
+> - 📦 **SCA** (Software Composition Analysis): Análise de dependências e componentes
+> - 🌐 **DAST** (Dynamic Application Security Testing): Análise dinâmica de aplicações web em execução
+> - 📊 **Relatórios detalhados**: Visualize vulnerabilidades e receba recomendações de correção
+> - 📩 **Notificações**: Integre com Microsoft Teams ou Slack para receber atualizações sobre os resultados dos scans
 
 ## Tópicos 📚
 
-- [Scan Automático com XGuardian 🔍](#scan-automático-com-xguardian-)
+- [XGuardian Security Scan Action 🔍](#xguardian-security-scan-action-)
   - [Tópicos 📚](#tópicos-)
   - [Pré-requisitos 📋](#pré-requisitos-)
     - [Credenciais Necessárias](#credenciais-necessárias)
@@ -22,6 +28,7 @@ Este Action executa varreduras de segurança automatizadas usando o XGuardian. E
     - [Exemplo de Scan SCA](#exemplo-de-scan-sca)
     - [Exemplo de Scan DAST](#exemplo-de-scan-dast)
     - [Exemplo Combinando Múltiplos Scans](#exemplo-combinando-múltiplos-scans)
+    - [Exemplo em Pull Requests](#exemplo-em-pull-requests)
   - [Outputs Disponíveis 📤](#outputs-disponíveis-)
     - [Uso dos Outputs](#uso-dos-outputs)
     - [Integração com Microsoft Teams](#integração-com-microsoft-teams)
@@ -33,12 +40,21 @@ Este Action executa varreduras de segurança automatizadas usando o XGuardian. E
 
 ### Credenciais Necessárias
 
-> ℹ️ Para adicionar segredos ao seu repositório: [Creating secrets for a repository](https://docs.github.com/pt/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository)
+> **Simplificado!** Agora você precisa apenas de credenciais básicas para começar a usar o XGuardian.
 
 | Segredo        | Descrição                              | Obrigatório |
 | -------------- | -------------------------------------- | :---------: |
 | `API_EMAIL`    | Email de acesso à plataforma XGuardian |     ✅      |
 | `API_PASSWORD` | Senha de acesso à plataforma XGuardian |     ✅      |
+
+Para adicionar esses segredos ao seu repositório:
+
+1. Acesse as configurações do seu repositório
+2. Navegue até "Secrets and variables" > "Actions"
+3. Clique em "New repository secret"
+4. Adicione cada segredo com seu respectivo valor
+
+[📚 Documentação oficial sobre segredos no GitHub Actions](https://docs.github.com/pt/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository)
 
 ### Parâmetros de Configuração
 
@@ -198,6 +214,60 @@ jobs:
     pdf: "true"
     translate: "true"
     get_scan_id: "true"
+```
+
+### Exemplo em Pull Requests
+
+Configure o scan para executar em pull requests, ajudando a garantir que novo código não introduza vulnerabilidades:
+
+```yaml
+name: XGuardian Security Check
+on:
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Importante para análises que comparam com versões anteriores
+
+      - name: XGuardian Security Scan
+        id: xguardian
+        uses: xmart-xguardian/xguardian-actions@main
+        with:
+          api_email: ${{ secrets.API_EMAIL }}
+          api_password: ${{ secrets.API_PASSWORD }}
+          app_name: ${{ github.event.repository.name }}
+          sast: "true"
+          sca: "true"
+          get_scan_id: "true"
+
+      - name: Comentar no Pull Request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🔍 Análise de Segurança XGuardian
+              
+              A análise de segurança foi concluída para este PR.
+              
+              - **App ID**: ${{ steps.xguardian.outputs.app_id }}
+              - **Scan ID**: ${{ steps.xguardian.outputs.scan_id }}
+              - **Versão**: ${{ steps.xguardian.outputs.scan_version }}
+              
+              [📊 Ver Resultados Completos](${{ steps.xguardian.outputs.scan_url }})`
+            })
 ```
 
 ## Outputs Disponíveis 📤
