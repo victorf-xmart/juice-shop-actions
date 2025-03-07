@@ -1,5 +1,7 @@
 # XGuardian Security Scan Action 🔍
 
+> **Versão atual: v25.1.0**
+
 Este GitHub Action executa varreduras de segurança automatizadas usando o XGuardian, permitindo análises de segurança contínuas diretamente nos seus workflows do GitHub. Integre facilmente análises de vulnerabilidades no seu pipeline de desenvolvimento.
 
 > **Recursos disponíveis:**
@@ -14,6 +16,7 @@ Este GitHub Action executa varreduras de segurança automatizadas usando o XGuar
 
 - [XGuardian Security Scan Action 🔍](#xguardian-security-scan-action-)
   - [Tópicos 📚](#tópicos-)
+  - [Requisitos do Sistema 🖥️](#requisitos-do-sistema-️)
   - [Pré-requisitos 📋](#pré-requisitos-)
     - [Credenciais Necessárias](#credenciais-necessárias)
     - [Parâmetros de Configuração](#parâmetros-de-configuração)
@@ -40,6 +43,16 @@ Este GitHub Action executa varreduras de segurança automatizadas usando o XGuar
     - [Como configurar alertas para vulnerabilidades críticas?](#como-configurar-alertas-para-vulnerabilidades-críticas)
   - [Modo de Desenvolvimento](#modo-de-desenvolvimento)
   - [Suporte](#suporte)
+
+## Requisitos do Sistema 🖥️
+
+O XGuardian Security Scan Action executa em ambientes GitHub Actions e requer:
+
+- **Runner**: Ubuntu (recomendado: `ubuntu-latest`)
+- **Dependências**: curl, jq e zip (instaladas automaticamente durante a execução)
+- **Permissões**: Acesso de leitura ao código do repositório
+- **Memória/CPU**: Recursos padrão do GitHub Actions são suficientes para projetos de tamanho médio
+- **Tempo de execução**: Variável conforme o tamanho do projeto e tipos de scan habilitados
 
 ## Pré-requisitos 📋
 
@@ -158,6 +171,7 @@ jobs:
     policy_sast: "0"
     scan_directory: "src"
     pdf: "true"
+    get_scan_id: "true" # Importante para obter os resultados
 ```
 
 ### Exemplo de Scan SCA
@@ -173,6 +187,7 @@ jobs:
     policy_sca: "0"
     scan_directory: "."
     exclude: "node_modules/,dist/,tests/"
+    get_scan_id: "true" # Importante para obter os resultados
 ```
 
 ### Exemplo de Scan DAST
@@ -192,6 +207,7 @@ jobs:
     auth_exist: true
     user_login: "usuario_teste"
     password_login: ${{ secrets.SITE_PASSWORD }}
+    get_scan_id: "true" # Importante para obter os resultados
 ```
 
 ### Exemplo Combinando Múltiplos Scans
@@ -278,25 +294,29 @@ jobs:
 
 ## Outputs Disponíveis 📤
 
-| Output       | Descrição                                               |
-| ------------ | ------------------------------------------------------- |
-| app_id       | ID da aplicação no XGuardian                            |
-| scan_id      | ID do scan executado                                    |
-| scan_url     | URL para visualizar os resultados do scan               |
-| scan_version | Nome/versão do scan (nome da aplicação + SHA do commit) |
+Este action fornece outputs que você pode usar em etapas subsequentes do seu workflow para vincular relatórios ou acionar notificações.
+
+| Output       | Descrição                                               | Disponibilidade                  |
+| ------------ | ------------------------------------------------------- | -------------------------------- |
+| app_id       | ID da aplicação no XGuardian                            | Sempre que `get_scan_id: "true"` |
+| scan_id      | ID do scan executado                                    | Sempre que `get_scan_id: "true"` |
+| scan_url     | URL para visualizar os resultados do scan               | Sempre que `get_scan_id: "true"` |
+| scan_version | Nome/versão do scan (nome da aplicação + SHA do commit) | Sempre disponível                |
+
+> **⚠️ Importante:** Para acessar esses outputs, você precisa definir `get_scan_id: "true"` e adicionar um `id` ao step.
 
 ### Uso dos Outputs
 
 ```yaml
 - name: XGuardian Security Scan
-  id: xguardian
+  id: xguardian # ID necessário para referenciar os outputs
   uses: xmart-xguardian/xguardian-actions@main
   with:
     api_email: ${{ secrets.API_EMAIL }}
     api_password: ${{ secrets.API_PASSWORD }}
     app_name: "minha-aplicacao"
     sast: "true"
-    get_scan_id: "true"
+    get_scan_id: "true" # Necessário para gerar os outputs
 
 - name: Verificar resultados
   run: |
@@ -359,11 +379,17 @@ jobs:
 
 ### Quanto tempo leva um scan completo?
 
-O tempo varia conforme o tamanho do projeto e os tipos de scan habilitados. Um scan SAST básico geralmente leva alguns minutos, enquanto scans DAST completos podem levar mais tempo dependendo da complexidade do site analisado.
+O tempo varia conforme o tamanho do projeto e os tipos de scan habilitados:
+
+- **SAST**: 2-10 minutos para projetos pequenos a médios
+- **SCA**: 1-5 minutos dependendo do número de dependências
+- **DAST**: 10-60 minutos dependendo do tamanho e complexidade do site
+
+Durante o scan, o action mostra barras de progresso e você pode verificar o status na interface do GitHub Actions.
 
 ### Posso usar este Action em repositórios privados?
 
-Sim, o XGuardian Security Scan funciona tanto em repositórios públicos quanto privados.
+Sim, o XGuardian Security Scan funciona tanto em repositórios públicos quanto privados. As credenciais são transmitidas de forma segura usando os secrets do GitHub.
 
 ### O que fazer se o scan falhar?
 
@@ -390,7 +416,17 @@ Se o scan falhar, siga estes passos para diagnóstico e resolução:
 
 ### Como configurar alertas para vulnerabilidades críticas?
 
-Use a integração com Microsoft Teams ou Slack conforme os exemplos fornecidos. Você também pode configurar notificações por email na plataforma XGuardian.
+Use a integração com Microsoft Teams ou Slack conforme os exemplos fornecidos. Você também pode configurar:
+
+1. **Falha do build em vulnerabilidades críticas**:
+
+   ```yaml
+   with:
+     pipeaction: "fail" # Falhará o build quando encontrar vulnerabilidades críticas
+   ```
+
+2. **Alertas customizados**:
+   Combine os outputs do scan com outras actions para criar alertas personalizados baseados na severidade das vulnerabilidades.
 
 ## Modo de Desenvolvimento
 
