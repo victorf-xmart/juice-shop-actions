@@ -33,6 +33,11 @@ Este GitHub Action executa varreduras de segurança automatizadas usando o XGuar
     - [Uso dos Outputs](#uso-dos-outputs)
     - [Integração com Microsoft Teams](#integração-com-microsoft-teams)
     - [Integração com Slack](#integração-com-slack)
+  - [Perguntas Frequentes ❓](#perguntas-frequentes-)
+    - [Quanto tempo leva um scan completo?](#quanto-tempo-leva-um-scan-completo)
+    - [Posso usar este Action em repositórios privados?](#posso-usar-este-action-em-repositórios-privados)
+    - [O que fazer se o scan falhar?](#o-que-fazer-se-o-scan-falhar)
+    - [Como configurar alertas para vulnerabilidades críticas?](#como-configurar-alertas-para-vulnerabilidades-críticas)
   - [Modo de Desenvolvimento](#modo-de-desenvolvimento)
   - [Suporte](#suporte)
 
@@ -100,15 +105,15 @@ Para adicionar esses segredos ao seu repositório:
 
 #### Configurações Adicionais
 
-| Parâmetro        | Descrição                               | Valor Padrão |
-| ---------------- | --------------------------------------- | ------------ |
-| `translate`      | Traduz o relatório para português       | `"false"`    |
-| `exclude`        | Padrões a serem excluídos do scan       | `""`         |
-| `pdf`            | Gera relatório PDF detalhado            | `"false"`    |
-| `scan_directory` | Diretório específico para análise       | `.`          |
-| `get_scan_id`    | Busca o ID do scan após o upload        | `"false"`    |
-| `save_vulns`     | Salva vulnerabilidades no banco         | `"false"`    |
-| `is_development` | Usa URLs de ambiente de desenvolvimento | `"false"`    |
+| Parâmetro        | Descrição                                    | Valor Padrão |
+| ---------------- | -------------------------------------------- | ------------ |
+| `translate`      | Traduz o relatório para português brasileiro | `"false"`    |
+| `exclude`        | Padrões a serem excluídos do scan            | `""`         |
+| `pdf`            | Gera relatório PDF detalhado                 | `"false"`    |
+| `scan_directory` | Diretório específico para análise            | `.`          |
+| `get_scan_id`    | Busca o ID do scan após o upload             | `"false"`    |
+| `save_vulns`     | Salva vulnerabilidades no banco              | `"false"`    |
+| `is_development` | Usa URLs de ambiente de desenvolvimento      | `"false"`    |
 
 ## Exemplos de Uso 🚀
 
@@ -349,9 +354,31 @@ jobs:
     SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
 ```
 
+## Perguntas Frequentes ❓
+
+### Quanto tempo leva um scan completo?
+
+O tempo varia conforme o tamanho do projeto e os tipos de scan habilitados. Um scan SAST básico geralmente leva alguns minutos, enquanto scans DAST completos podem levar mais tempo dependendo da complexidade do site analisado.
+
+### Posso usar este Action em repositórios privados?
+
+Sim, o XGuardian Security Scan funciona tanto em repositórios públicos quanto privados.
+
+### O que fazer se o scan falhar?
+
+Verificar logs para mensagens de erro específicas. Problemas comuns incluem:
+
+- Credenciais inválidas
+- URL de site para DAST mal configurada
+- Problemas de conectividade com a API XGuardian
+
+### Como configurar alertas para vulnerabilidades críticas?
+
+Use a integração com Microsoft Teams ou Slack conforme os exemplos fornecidos. Você também pode configurar notificações por email na plataforma XGuardian.
+
 ## Modo de Desenvolvimento
 
-Para utilizar o ambiente de desenvolvimento da plataforma XGuardian, adicione o parâmetro is_development: "true" à configuração do action. Isso redirecionará as requisições para o ambiente de desenvolvimento em vez do ambiente de produção.
+Para utilizar o ambiente de desenvolvimento da plataforma XGuardian, adicione o parâmetro is_development: "true" à configuração do action. Isso redirecionará as requisições para o ambiente de desenvolvimento invés do ambiente de produção.
 
 ```yaml
 - name: XGuardian Security Scan (Dev)
