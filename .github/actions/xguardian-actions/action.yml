@@ -545,6 +545,47 @@ runs:
         else
           echo "A aplicação não existe. Criando nova aplicação..."
 
+          # Verificar se a equipe existe antes de tentar criar a aplicação
+          echo "Verificando se a equipe $TEAM_ID existe..."
+          TEAMS_RESPONSE=$(curl -sS -X GET \
+            "${UPLOADER_URL}/get_teams?page=1&items_per_page=100" \
+            -H 'accept: application/json' \
+            -H "Authorization: Bearer ${API_TOKEN}")
+          
+          # Extrai IDs das equipes disponíveis para comparar
+          if echo "$TEAMS_RESPONSE" | jq -e '.data' > /dev/null 2>&1; then
+            # Extrair todos os IDs de equipe disponíveis
+            AVAILABLE_TEAM_IDS=$(echo "$TEAMS_RESPONSE" | jq -r '.data[].id')
+            
+            # Extrair IDs fornecidos pelo usuário (removendo colchetes e espaços)
+            USER_TEAM_IDS=$(echo "$TEAM_ID" | tr -d '[]" ' | tr ',' '\n')
+            
+            # Flag para verificar se todas as equipes existem
+            ALL_TEAMS_EXIST=true
+            INVALID_TEAMS=""
+            
+            # Verificar cada ID fornecido pelo usuário
+            for team_id in $USER_TEAM_IDS; do
+              if ! echo "$AVAILABLE_TEAM_IDS" | grep -q "^$team_id$"; then
+                ALL_TEAMS_EXIST=false
+                INVALID_TEAMS="$INVALID_TEAMS $team_id"
+              fi
+            done
+            
+            if [ "$ALL_TEAMS_EXIST" = false ]; then
+              echo "::error::Equipe(s)${INVALID_TEAMS} não encontrada(s) ou não pertence(m) à sua organização."
+              echo "::error::Por favor, verifique o ID da equipe fornecido em 'team_id' e tente novamente."
+              echo "::error::Equipes disponíveis para sua conta:"
+              echo "$TEAMS_RESPONSE" | jq -r '.data[] | "ID: \(.id) - Nome: \(.name)"'
+              echo "::endgroup::"
+              exit 1
+            else
+              echo "✅ Equipe(s) verificada(s) com sucesso!"
+            fi
+          else
+            echo "::warning::Não foi possível verificar as equipes disponíveis. Continuando mesmo assim..."
+          fi
+
           # Determine microservices value
           if [[ "${MICROSERVICES}" == "true" ]]; then
             MICROSERVICES_VALUE="true"
@@ -567,19 +608,34 @@ runs:
           
           JSON_CONTENT+='}'
           
+          echo "📝 Payload para criação da aplicação:"
+          echo "$JSON_CONTENT" | jq .
+          
           RESPONSE=$(curl -sS -X POST "${CREATE_APP_URL}" \
             -H 'accept: application/json' \
             -H "Authorization: Bearer ${API_TOKEN}" \
             -H 'Content-Type: application/json' \
             -d "${JSON_CONTENT}")
 
+          echo "📄 Resposta da API:"
+          echo "$RESPONSE" | jq . || echo "$RESPONSE"
+
           # Verificar se a resposta contém a mensagem de sucesso
-          if echo "$RESPONSE" | grep -q '"sucess":"Aplicação'; then
-            echo "Aplicação criada com sucesso."
+          if echo "$RESPONSE" | grep -q '"sucess":"Aplicação\|"success":"Aplicação'; then
+            echo "✅ Aplicação criada com sucesso."
             echo "APP_ID=N/A" >> $GITHUB_ENV
           else
-            echo "::error::Erro inesperado na criação da aplicação"
-            echo "$RESPONSE"
+            # Melhor tratamento de erro com mensagem específica
+            if echo "$RESPONSE" | grep -q "Equipe"; then
+              ERROR_MSG=$(echo "$RESPONSE" | jq -r '.Equipe // "Erro desconhecido com a equipe"')
+              echo "::error::Erro ao criar aplicação: $ERROR_MSG"
+              echo "::error::Verifique se o ID da equipe fornecido em 'team_id' está correto."
+              echo "::error::O valor atual é: $TEAM_ID"
+            else
+              echo "::error::Erro inesperado na criação da aplicação:"
+              echo "$RESPONSE" | jq . || echo "$RESPONSE"
+            fi
+            echo "::endgroup::"
             exit 1
           fi
         fi
