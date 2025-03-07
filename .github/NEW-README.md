@@ -105,15 +105,16 @@ Para adicionar esses segredos ao seu repositório:
 
 #### Configurações Adicionais
 
-| Parâmetro        | Descrição                                    | Valor Padrão |
-| ---------------- | -------------------------------------------- | ------------ |
-| `translate`      | Traduz o relatório para português brasileiro | `"false"`    |
-| `exclude`        | Padrões a serem excluídos do scan            | `""`         |
-| `pdf`            | Gera relatório PDF detalhado                 | `"false"`    |
-| `scan_directory` | Diretório específico para análise            | `.`          |
-| `get_scan_id`    | Busca o ID do scan após o upload             | `"false"`    |
-| `save_vulns`     | Salva vulnerabilidades no banco              | `"false"`    |
-| `is_development` | Usa URLs de ambiente de desenvolvimento      | `"false"`    |
+| Parâmetro        | Descrição                                                | Valor Padrão |
+| ---------------- | -------------------------------------------------------- | ------------ |
+| `translate`      | Traduz o relatório para português brasileiro             | `"false"`    |
+| `exclude`        | Padrões a serem excluídos do scan                        | `""`         |
+| `pdf`            | Gera relatório PDF detalhado                             | `"false"`    |
+| `scan_directory` | Diretório específico para análise                        | `.`          |
+| `get_scan_id`    | Busca o ID do scan após o upload                         | `"false"`    |
+| `save_vulns`     | Salva vulnerabilidades no banco                          | `"false"`    |
+| `is_development` | Usa URLs de ambiente de desenvolvimento                  | `"false"`    |
+| `pipeaction`     | Ação na pipeline quando vulnerabilidades são encontradas | `"noAction"` |
 
 ## Exemplos de Uso 🚀
 
@@ -408,4 +409,4 @@ Para utilizar o ambiente de desenvolvimento da plataforma XGuardian, adicione o 
 
 ## Suporte
 
-Para dúvidas ou problemas relacionados a este action, entre em contato com a equipe de suporte XGuardian ou abra uma issue no repositório do GitHub.
+Para dúvidas ou problemas relacionados a este action, entre em contato com a equipe de suporte XGuardian através do email <suporte@xmartsolutions.com> ou abra uma issue no repositório do GitHub em <https://github.com/xmart-xguardian/xguardian-actions/issues>.
