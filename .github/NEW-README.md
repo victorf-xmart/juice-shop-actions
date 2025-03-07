@@ -366,11 +366,26 @@ Sim, o XGuardian Security Scan funciona tanto em repositórios públicos quanto 
 
 ### O que fazer se o scan falhar?
 
-Verificar logs para mensagens de erro específicas. Problemas comuns incluem:
+Se o scan falhar, siga estes passos para diagnóstico e resolução:
 
-- Credenciais inválidas
-- URL de site para DAST mal configurada
-- Problemas de conectividade com a API XGuardian
+1. **Verificar logs do workflow**: Examine detalhadamente os logs para identificar a etapa exata onde ocorreu a falha
+
+2. **Problemas comuns e soluções**:
+
+   - **Credenciais inválidas**: Verifique se o email e senha fornecidos são válidos e têm permissões adequadas
+   - **Problemas de conexão**: Confirme que há conectividade com a API XGuardian (especialmente em ambientes com firewalls restritos)
+   - **URL para DAST mal configurada**: Para scans DAST, verifique se a URL do site alvo está acessível e formatada corretamente
+   - **Falha no upload de arquivos**: Verifique se o diretório de scan contém arquivos válidos e não ultrapassa limites de tamanho
+   - **Timeout na obtenção do Scan ID**: Aumente o tempo de espera antes de buscar o ID do scan definindo `get_scan_id: "true"`
+   - **Falha na criação do arquivo ZIP**: Verifique se há permissões de escrita no diretório de trabalho
+
+3. **Valores incorretos nos parâmetros**:
+
+   - Confirme que `app_name` contém apenas caracteres válidos
+   - Verifique se `team_id` e `languages` estão formatados corretamente como arrays JSON
+
+4. **Se o problema persistir**:
+   - Entre em contato com a equipe de suporte do XGuardian para assistência adicional
 
 ### Como configurar alertas para vulnerabilidades críticas?
 
